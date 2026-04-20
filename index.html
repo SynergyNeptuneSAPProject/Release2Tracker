@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase v9 compat (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 
 /* ── TOKENS ─────────────────────────────────────────────────── */
@@ -165,7 +167,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 }
 
 /* ── MAIN & VIEWS ────────────────────────────────────────────── */
-.main{padding:1.75rem 2rem;max-width:1500px;margin:0 auto;position:relative;z-index:1}
+.main{padding:1.75rem 2rem 3.5rem;max-width:1500px;margin:0 auto;position:relative;z-index:1}
 .view{display:none}.view.active{display:block}
 .view.entering-r{animation:slideInR .3s ease both}
 .view.entering-l{animation:slideInL .3s ease both}
@@ -748,6 +750,73 @@ thead tr.head-main th:nth-child(4),thead tr.phase-subhead th:nth-child(4),tbody 
 .defaulters-empty-text{font-size:13px;font-weight:600;color:#065f46;line-height:1.4}
 .defaulters-empty-sub{font-size:11px;color:#059669;margin-top:2px;opacity:.75}
 
+/* ── FIREBASE SYNC ───────────────────────────────────────── */
+.sync-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:998;
+  height:32px;display:flex;align-items:center;padding:0 1.5rem;gap:12px;
+  background:rgba(232,237,245,.96);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);font-size:11px;
+  transition:background .3s;
+}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.sync-dot.online{background:#059669;box-shadow:0 0 5px rgba(5,150,105,.5);animation:glow 2s ease-in-out infinite}
+.sync-dot.saving{background:#d97706;animation:spin .8s linear infinite}
+.sync-dot.offline{background:#dc2626}
+.sync-label{color:var(--text2);font-weight:500}
+.sync-user{margin-left:auto;color:var(--text3);font-family:var(--mono);font-size:10px}
+.sync-setup-btn{
+  margin-left:auto;font-size:11px;font-weight:600;padding:3px 12px;
+  border-radius:5px;cursor:pointer;border:1px solid rgba(59,130,246,.3);
+  background:rgba(59,130,246,.08);color:var(--blue);transition:all .2s;
+}
+.sync-setup-btn:hover{background:rgba(59,130,246,.15)}
+
+/* Config overlay */
+.config-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem;
+}
+.config-box{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--rxl);
+  padding:2rem;width:100%;max-width:520px;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);animation:scaleIn .22s cubic-bezier(.34,1.3,.64,1);
+}
+.config-title{font-size:18px;font-weight:700;margin-bottom:6px;letter-spacing:-.02em}
+.config-sub{font-size:12px;color:var(--text3);margin-bottom:1.5rem;line-height:1.6}
+.config-step{
+  display:flex;gap:12px;align-items:flex-start;margin-bottom:1rem;
+  padding:10px 14px;background:var(--s2);border-radius:var(--r);
+  border:1px solid var(--border);font-size:12px;line-height:1.6;
+}
+.config-step-num{
+  width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.config-fields{display:flex;flex-direction:column;gap:10px;margin-bottom:1.4rem}
+.config-field{display:flex;flex-direction:column;gap:4px}
+.config-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.config-input{
+  font-family:var(--mono);font-size:12px;padding:8px 11px;
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text);outline:none;transition:border-color .2s;
+}
+.config-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.config-input::placeholder{color:var(--text3)}
+.config-actions{display:flex;gap:8px;justify-content:flex-end}
+.config-note{font-size:10px;color:var(--text3);margin-top:10px;line-height:1.6;font-family:var(--mono)}
+
+/* loading spinner */
+.db-loading{
+  position:fixed;inset:0;background:rgba(232,237,245,.85);backdrop-filter:blur(4px);
+  z-index:1999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+}
+.db-loading-spinner{
+  width:40px;height:40px;border:3px solid var(--border2);
+  border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;
+}
+.db-loading-text{font-size:13px;font-weight:500;color:var(--text2)}
+
 /* ── SYSTEM / CATEGORY COMPLETION ───────────────────────── */
 .syscomp-wrap{
   background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);
@@ -1309,24 +1378,109 @@ const SCM_DEFAULT=
 ];
 
 let currentPlan='int';
-let INT_DATA=JSON.parse(localStorage.getItem('r2_int_data')||'null')||INT_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
-let SCM_DATA=JSON.parse(localStorage.getItem('r2_scm_data')||'null')||SCM_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
+let INT_DATA=INT_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
+let SCM_DATA=SCM_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
 INT_DATA.forEach(r=>{if(!r.phaseDone)r.phaseDone=Array(7).fill(null);while(r.phaseDone.length<7)r.phaseDone.push(null);});
 SCM_DATA.forEach(r=>{if(!r.phaseDone)r.phaseDone=Array(7).fill(null);while(r.phaseDone.length<7)r.phaseDone.push(null);});
+
+/* ════════════ SUPABASE REAL-TIME SYNC ════════════════════ */
+const SUPABASE_URL='https://huwifkhyezmcbrgrctav.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1d2lma2h5ZXptY2JyZ3JjdGF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NTQ5MjgsImV4cCI6MjA5MjIzMDkyOH0.Uk7jzxM4YycoWqNYK607yqMVq0-gXJkCaXLQyMj5j74';
+let sbClient=null,sbChannel=null,sbUser=localStorage.getItem('sb_user')||'';
+
+function setSyncStatus(state,label){
+  const dot=document.getElementById('syncDot'),lbl=document.getElementById('syncLabel');
+  if(!dot)return;
+  dot.className='sync-dot '+state;
+  lbl.textContent=label;
+}
+
+function showNamePrompt(){
+  // lightweight name prompt — no complex overlay needed
+  const name=prompt('Enter your name (shown to team):','');
+  if(name&&name.trim()){sbUser=name.trim();localStorage.setItem('sb_user',sbUser);}
+  else sbUser=localStorage.getItem('sb_user')||'Team member';
+  initSupabase();
+}
+
+async function initSupabase(){
+  try{
+    sbClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    document.getElementById('syncBar').style.display='flex';
+    document.getElementById('syncUser').textContent='👤 '+sbUser;
+    document.getElementById('dbLoading').style.display='flex';
+    setSyncStatus('saving','Connecting…');
+    await loadData();
+    subscribeRealtime();
+  }catch(e){
+    setSyncStatus('offline','Connection failed');
+    document.getElementById('dbLoading').style.display='none';
+    toast('Supabase error: '+e.message,'error');
+  }
+}
+
+async function loadData(){
+  // Load both plans
+  const {data:intRow}=await sbClient.from('project_data').select('rows').eq('id','integrations').single();
+  const {data:scmRow}=await sbClient.from('project_data').select('rows').eq('id','scm').single();
+
+  if(intRow&&intRow.rows&&intRow.rows.length){
+    INT_DATA=intRow.rows;
+  } else {
+    // First run — seed the database with defaults
+    await sbClient.from('project_data').upsert({id:'integrations',rows:INT_DATA,updated_by:'system',updated_at:new Date().toISOString()});
+  }
+  if(scmRow&&scmRow.rows&&scmRow.rows.length){
+    SCM_DATA=scmRow.rows;
+  } else {
+    await sbClient.from('project_data').upsert({id:'scm',rows:SCM_DATA,updated_by:'system',updated_at:new Date().toISOString()});
+  }
+
+  [INT_DATA,SCM_DATA].forEach(D=>D.forEach(r=>{
+    if(!r.phaseDone)r.phaseDone=Array(7).fill(null);
+    while(r.phaseDone.length<7)r.phaseDone.push(null);
+  }));
+  migrateStatus();
+  document.getElementById('dbLoading').style.display='none';
+  setSyncStatus('online','Live — synced');
+  refreshDashboard();
+  syncImportLabels();
+}
+
+function subscribeRealtime(){
+  sbChannel=sbClient.channel('project_data_changes')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'project_data'},function(payload){
+      const id=payload.new.id,rows=payload.new.rows;
+      if(!rows||!rows.length)return;
+      const sanitise=D=>{D.forEach(r=>{if(!r.phaseDone)r.phaseDone=Array(7).fill(null);while(r.phaseDone.length<7)r.phaseDone.push(null);});};
+      if(id==='integrations'){INT_DATA=rows;sanitise(INT_DATA);if(currentPlan==='int')refreshDashboard();}
+      if(id==='scm'){SCM_DATA=rows;sanitise(SCM_DATA);if(currentPlan==='scm')refreshDashboard();}
+      setSyncStatus('online','Live — synced');
+    })
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED')setSyncStatus('online','Live — synced');
+      if(status==='CLOSED'||status==='CHANNEL_ERROR')setSyncStatus('offline','Disconnected — retrying…');
+    });
+}
+
+function persist(){
+  if(sbClient){
+    setSyncStatus('saving','Saving…');
+    const id=currentPlan==='int'?'integrations':'scm';
+    sbClient.from('project_data').upsert({id,rows:DATA(),updated_by:sbUser,updated_at:new Date().toISOString()})
+      .then(({error})=>{
+        if(error){setSyncStatus('offline','Save failed');toast('Save failed: '+error.message,'error');}
+        else setSyncStatus('online','Saved · '+new Date().toLocaleTimeString());
+      });
+  }
+}
 
 function DATA(){return currentPlan==='int'?INT_DATA:SCM_DATA;}
 function PHASE_NAMES(){return currentPlan==='int'?INT_PHASE_NAMES:SCM_PHASE_NAMES;}
 function PHASE_SHORT(){return currentPlan==='int'?INT_PHASE_SHORT:SCM_PHASE_SHORT;}
 function groupKey(){return currentPlan==='int'?'system':'category';}
 function col3Key(){return currentPlan==='int'?'flow':'assignedTo';}
-function persist(){
-  try{
-    if(currentPlan==='int')localStorage.setItem('r2_int_data',JSON.stringify(INT_DATA));
-    else localStorage.setItem('r2_scm_data',JSON.stringify(SCM_DATA));
-  }catch(e){}
-}
 function getGroups(){return[...new Set(DATA().map(r=>r[groupKey()]))].sort();}
-
 
 (function(){
   const canvas=document.getElementById('particleCanvas');
@@ -1912,7 +2066,12 @@ function parseCSV(text,gk,ck){
 }
 function importCSVFile(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{const rows=parseCSV(ev.target.result,groupKey(),col3Key());if(!rows.length){toast('No valid rows.','error');return;}if(!confirm('Import '+rows.length+' rows?'))return;if(currentPlan==='int')INT_DATA=rows;else SCM_DATA=rows;persist();refreshAll();toast('Imported '+rows.length+' items.','success');};reader.readAsText(file);}
 function importFromPaste(){const text=document.getElementById('csvPaste').value.trim();if(!text){toast('Paste CSV first.','warn');return;}const rows=parseCSV(text,groupKey(),col3Key());if(!rows.length){toast('No valid rows.','error');return;}if(!confirm('Import '+rows.length+' rows?'))return;if(currentPlan==='int')INT_DATA=rows;else SCM_DATA=rows;persist();refreshAll();toast('Imported '+rows.length+' items.','success');document.getElementById('csvPaste').value='';}
-function resetData(){if(!confirm('Reset to original data?'))return;if(currentPlan==='int'){INT_DATA=INT_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));localStorage.removeItem('r2_int_data');}else{SCM_DATA=SCM_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));localStorage.removeItem('r2_scm_data');}refreshAll();toast('Reset.','info');}
+function resetData(){
+  if(!confirm('Reset to original data? All edits will be lost.'))return;
+  if(currentPlan==='int')INT_DATA=INT_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
+  else SCM_DATA=SCM_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
+  persist();refreshAll();toast('Reset.','info');
+}
 
 /* ════════════ EXCEL EXPORT ═══════════════════════════════════ */
 function exportXLSX(){
@@ -2244,20 +2403,36 @@ document.head.appendChild(extraCSS);
 
 sortKey=groupKey();
 
-// Migrate old "Yet to Start" / "Yet to start" values in localStorage
 function migrateStatus(){
   [INT_DATA, SCM_DATA].forEach(D=>{
-    D.forEach(r=>{
-      if(r.status==='Yet to Start'||r.status==='Yet to start') r.status='New';
-    });
+    D.forEach(r=>{if(r.status==='Yet to Start'||r.status==='Yet to start')r.status='New';});
   });
-  try{localStorage.setItem('r2_int_data',JSON.stringify(INT_DATA));
-      localStorage.setItem('r2_scm_data',JSON.stringify(SCM_DATA));}catch(e){}
 }
-migrateStatus();
-refreshDashboard();
-syncImportLabels();
+
+// Auto-connect Firebase if config saved; else show setup overlay
+(function initApp(){
+  sortKey=groupKey();
+  refreshDashboard();
+  syncImportLabels();
+  // Ask for name if not set, then connect to Supabase
+  if(!sbUser){showNamePrompt();}
+  else{initSupabase();}
+})();
 
 </script>
+<!-- DB Loading overlay -->
+<div class="db-loading" id="dbLoading" style="display:none">
+  <div class="db-loading-spinner"></div>
+  <div class="db-loading-text">Connecting to shared database…</div>
+</div>
+
+<!-- Sync status bar -->
+<div class="sync-bar" id="syncBar" style="display:none">
+  <div class="sync-dot offline" id="syncDot"></div>
+  <span class="sync-label" id="syncLabel">Connecting…</span>
+  <span class="sync-user" id="syncUser"></span>
+  <button class="sync-setup-btn" onclick="sbUser='';localStorage.removeItem('sb_user');location.reload()" title="Change your name">✏️ Change name</button>
+</div>
+
 </body>
 </html>

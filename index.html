@@ -1,0 +1,2263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Synergy Neptune - Release 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+
+/* ── TOKENS ─────────────────────────────────────────────────── */
+:root{
+  --bg:#e8edf5; --s1:#f4f7fb; --s2:#eaeff7; --s3:#dce3ef;
+  --border:rgba(30,41,59,.09); --border2:rgba(30,41,59,.16); --border3:rgba(30,41,59,.26);
+  --text:#1e293b; --text2:#475569; --text3:#8a99b0;
+  --blue:#3b82f6; --blue-d:rgba(59,130,246,.1);
+  --green:#059669; --green-d:rgba(5,150,105,.1);
+  --amber:#d97706; --amber-d:rgba(217,119,6,.1);
+  --red:#dc2626; --red-d:rgba(220,38,38,.1);
+  --purple:#7c3aed; --purple-d:rgba(124,58,237,.1);
+  --cyan:#0891b2; --cyan-d:rgba(8,145,178,.1);
+  --orange:#ea580c; --orange-d:rgba(234,88,12,.1);
+  --r:8px; --rl:12px; --rxl:16px;
+  --mono:'IBM Plex Mono',monospace;
+}
+
+/* ── KEYFRAMES ──────────────────────────────────────────────── */
+@keyframes fadeUp    {from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn    {from{opacity:0}to{opacity:1}}
+@keyframes scaleIn   {from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes popupIn   {from{opacity:0;transform:scale(.82) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes popupOut  {from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.88) translateY(4px)}}
+@keyframes slideInR  {from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOutL {from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-28px)}}
+@keyframes slideInL  {from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOutR {from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(28px)}}
+@keyframes pulse     {0%,100%{box-shadow:0 0 0 0 var(--pulse-c,rgba(245,158,11,.4))} 60%{box-shadow:0 0 0 6px transparent}}
+@keyframes rippleAnim{from{transform:scale(0);opacity:.45}to{transform:scale(3.5);opacity:0}}
+@keyframes countUp   {from{opacity:0;transform:translateY(10px) scale(.85)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes gradShift {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes orbFloat  {0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-18px) scale(1.04)}}
+@keyframes rowIn     {from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes glow      {0%,100%{opacity:.4}50%{opacity:.9}}
+@keyframes spin      {to{transform:rotate(360deg)}}
+
+/* ── RESET ──────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(59,130,246,.06),transparent);}
+
+/* ── PARTICLE CANVAS ────────────────────────────────────────── */
+#particleCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.3}
+
+/* ── AMBIENT ORBS ───────────────────────────────────────────── */
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;animation:orbFloat 8s ease-in-out infinite}
+.orb1{width:380px;height:380px;background:radial-gradient(circle,rgba(59,130,246,.09),transparent 70%);top:-80px;left:-80px;animation-delay:0s}
+.orb2{width:300px;height:300px;background:radial-gradient(circle,rgba(124,58,237,.07),transparent 70%);bottom:10%;right:-60px;animation-delay:-3s}
+.orb3{width:250px;height:250px;background:radial-gradient(circle,rgba(8,145,178,.06),transparent 70%);top:45%;left:35%;animation-delay:-5s}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#d0d9e8;border-radius:4px}
+::-webkit-scrollbar-thumb{background:#7c8fa6;border-radius:4px;border:2px solid #d0d9e8}
+::-webkit-scrollbar-thumb:hover{background:#4b6282}
+::-webkit-scrollbar-thumb:active{background:#3b82f6}
+::-webkit-scrollbar-corner{background:#d0d9e8}
+.table-wrap::-webkit-scrollbar{width:11px;height:11px}
+.table-wrap::-webkit-scrollbar-track{background:#d0d9e8;border-radius:6px;margin:2px}
+.table-wrap::-webkit-scrollbar-thumb{background:#7c8fa6;border-radius:6px;border:2px solid #d0d9e8}
+.table-wrap::-webkit-scrollbar-thumb:hover{background:#3b82f6;border-color:#bfdbfe}
+.table-wrap::-webkit-scrollbar-thumb:active{background:#2563eb}
+.table-wrap::-webkit-scrollbar-corner{background:#d0d9e8}
+*{scrollbar-width:thin;scrollbar-color:#7c8fa6 #d0d9e8}
+.table-wrap{scrollbar-width:auto;scrollbar-color:#7c8fa6 #d0d9e8}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+.header{
+  position:sticky;top:0;z-index:200;height:62px;
+  background:rgba(232,237,245,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;display:flex;align-items:center;justify-content:space-between;
+  animation:fadeIn .5s ease both;
+}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:500;color:#fff;
+  box-shadow:0 0 24px rgba(59,130,246,.4),0 0 50px rgba(59,130,246,.15);
+  transition:transform .2s,box-shadow .2s;
+}
+.logo:hover{transform:scale(1.08) rotate(-3deg);box-shadow:0 0 32px rgba(59,130,246,.6)}
+.header-title{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.header-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px}
+.live-badge{
+  display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);
+  font-family:var(--mono);padding:4px 10px;border-radius:20px;
+  background:var(--green-d);border:1px solid rgba(16,185,129,.2);
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:glow 2s ease-in-out infinite}
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn{
+  position:relative;overflow:hidden;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 15px;border-radius:var(--r);font-size:12px;
+  font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;
+  border:1px solid var(--border2);background:transparent;color:var(--text2);
+  transition:all .2s;white-space:nowrap;
+}
+.btn:hover{background:var(--s2);color:var(--text);border-color:var(--border3);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn.primary{
+  background:linear-gradient(135deg,var(--blue),#2563eb);
+  color:#fff;border-color:transparent;
+  box-shadow:0 4px 16px rgba(59,130,246,.4);
+}
+.btn.primary:hover{box-shadow:0 6px 24px rgba(59,130,246,.55);transform:translateY(-2px)}
+.btn.danger{border-color:rgba(239,68,68,.3);color:var(--red)}
+.btn.danger:hover{background:var(--red-d)}
+/* ripple */
+.ripple-wave{
+  position:absolute;border-radius:50%;background:rgba(30,41,59,.15);
+  transform:scale(0);animation:rippleAnim .55s ease-out forwards;
+  pointer-events:none;
+}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+.nav-tabs{
+  position:sticky;top:136px;z-index:197;
+  display:flex;gap:8px;padding:0 2rem;
+  background:rgba(232,237,245,.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  align-items:center;height:48px;
+}
+.nav-tab{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 16px;font-size:12px;font-weight:600;
+  color:var(--text3);border-radius:7px;
+  cursor:pointer;user-select:none;letter-spacing:.01em;
+  border:1px solid transparent;
+  background:transparent;
+  transition:all .2s;position:relative;
+  white-space:nowrap;
+}
+.nav-tab:hover{
+  color:var(--text2);
+  background:rgba(59,130,246,.06);
+  border-color:rgba(59,130,246,.15);
+}
+.nav-tab.active{
+  color:var(--blue);
+  background:rgba(59,130,246,.1);
+  border-color:rgba(59,130,246,.25);
+  box-shadow:0 2px 8px rgba(59,130,246,.12);
+}
+.nav-tab.active::before{
+  content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+  width:24px;height:2px;border-radius:2px;
+  background:var(--blue);
+}
+
+/* ── MAIN & VIEWS ────────────────────────────────────────────── */
+.main{padding:1.75rem 2rem;max-width:1500px;margin:0 auto;position:relative;z-index:1}
+.view{display:none}.view.active{display:block}
+.view.entering-r{animation:slideInR .3s ease both}
+.view.entering-l{animation:slideInL .3s ease both}
+
+/* ── KPIs ────────────────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem}
+.kpi{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);
+  padding:1.3rem 1.5rem;position:relative;overflow:hidden;cursor:pointer;
+  transition:transform .25s,border-color .25s,box-shadow .25s;
+  opacity:0;animation:fadeUp .55s ease forwards;
+}
+.kpi:nth-child(1){animation-delay:.06s}.kpi:nth-child(2){animation-delay:.13s}
+.kpi:nth-child(3){animation-delay:.20s}.kpi:nth-child(4){animation-delay:.27s}
+.kpi:hover{transform:translateY(-4px) scale(1.01);border-color:var(--border2);box-shadow:0 12px 32px rgba(0,0,0,.1)}
+.kpi-glow{position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;filter:blur(50px);opacity:.1;background:var(--kpi-c,var(--blue));transition:opacity .3s}
+.kpi:hover .kpi-glow{opacity:.2}
+.kpi-stripe{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rxl) var(--rxl) 0 0;background:linear-gradient(90deg,var(--kpi-c,var(--blue)),transparent)}
+.kpi-icon{
+  width:40px;height:40px;border-radius:11px;margin-bottom:12px;
+  background:color-mix(in srgb,var(--kpi-c,var(--blue)) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--kpi-c,var(--blue)) 22%,transparent);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  transition:transform .2s;
+}
+.kpi:hover .kpi-icon{transform:scale(1.1) rotate(-5deg)}
+.kpi-val{font-size:30px;font-weight:700;letter-spacing:-.04em;transition:color .2s}
+.kpi-label{font-size:12px;font-weight:500;color:var(--text2);margin-top:4px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);
+  padding:1.3rem 1.5rem;transition:border-color .2s,box-shadow .2s;
+  opacity:0;animation:fadeUp .55s ease forwards;
+}
+.card:hover{border-color:var(--border2);box-shadow:0 8px 30px rgba(0,0,0,.07)}
+.card-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--blue);margin-bottom:1rem;
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(59,130,246,.08);
+  border:1px solid rgba(59,130,246,.18);
+  border-radius:6px;padding:4px 12px 4px 10px;
+  width:fit-content;
+}
+.card-title::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--blue);flex-shrink:0}
+
+/* ── LEGEND ──────────────────────────────────────────────────── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:default;transition:color .15s}
+.legend-item:hover{color:var(--text)}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ── CHARTS ROW ──────────────────────────────────────────────── */
+.charts-row{display:grid;grid-template-columns:1.65fr 1fr;gap:14px;margin-bottom:14px}
+.charts-row2{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:1.5rem}
+/* side-by-side doughnut pair */
+.comp-pair{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:start}
+.comp-half{display:flex;flex-direction:column;align-items:center;padding:4px 4px 0}
+.comp-half-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);text-align:center;margin-bottom:4px}
+.comp-divider{width:1px;background:var(--border);align-self:stretch;margin:4px 6px}
+.comp-half .legend{flex-wrap:wrap;justify-content:center;gap:5px;margin-top:5px;margin-bottom:2px}
+@media(max-width:700px){
+  .comp-pair{grid-template-columns:1fr}
+  .comp-divider{display:none;height:1px;width:100%;margin:8px 0}
+}
+.chart-scroll-wrap{
+  overflow-y:auto;max-height:260px;position:relative;
+  scrollbar-width:thin;scrollbar-color:#7c8fa6 #dce3ef;
+}
+.chart-scroll-wrap::-webkit-scrollbar{width:6px}
+.chart-scroll-wrap::-webkit-scrollbar-track{background:#dce3ef;border-radius:3px}
+.chart-scroll-wrap::-webkit-scrollbar-thumb{background:#7c8fa6;border-radius:3px}
+.chart-scroll-wrap::-webkit-scrollbar-thumb:hover{background:#3b82f6}
+.chart-scroll-hint{font-size:10px;color:var(--text3);text-align:right;margin-top:4px;font-style:italic;display:none}
+.chart-scroll-hint.visible{display:block}
+
+/* ── GANTT ───────────────────────────────────────────────────── */
+.gantt-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);padding:1.3rem 1.5rem;margin-bottom:1.5rem;opacity:0;animation:fadeUp .55s .28s ease forwards}
+.gantt-row{display:flex;align-items:center;margin-bottom:7px;font-size:11px}
+.gantt-label{width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px;font-weight:600;transition:color .15s}
+.gantt-track{flex:1;height:22px;background:var(--s3);border-radius:5px;position:relative;overflow:visible}
+.gantt-bar{
+  position:absolute;height:100%;border-radius:5px;cursor:pointer;
+  transition:filter .2s,opacity .2s;
+}
+.gantt-bar:hover{filter:brightness(1.2);opacity:1!important}
+.gantt-today{position:absolute;top:-4px;width:2px;height:30px;background:var(--red);border-radius:2px;z-index:5}
+.gantt-today::before{content:'▼';position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--red)}
+
+/* ── TABLE ───────────────────────────────────────────────────── */
+.table-section{background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);overflow:hidden;opacity:0;animation:fadeUp .55s .35s ease forwards}
+.table-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.table-header-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.table-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--purple);
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(124,58,237,.08);
+  border:1px solid rgba(124,58,237,.18);
+  border-radius:6px;padding:4px 12px 4px 10px;
+  width:fit-content;
+}
+.table-title::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--purple);flex-shrink:0}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-select,.search-box{
+  font-family:'Inter',sans-serif;font-size:12px;padding:6px 11px;
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text);cursor:pointer;outline:none;transition:all .2s;
+}
+.filter-select:hover,.search-box:hover{border-color:var(--border2)}
+.filter-select:focus,.search-box:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.search-box{width:210px}.search-box::placeholder{color:var(--text3)}
+
+.phase-key{display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3);flex-wrap:wrap;transition:opacity .2s,max-height .3s}
+.phase-key.hidden{opacity:0;pointer-events:none;max-height:0;overflow:hidden;margin:0;padding:0}
+.pk-item{display:flex;align-items:center;gap:5px;cursor:default}
+.pk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* phase toggle button */
+.phase-toggle{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border2);background:var(--s2);color:var(--text2);
+  transition:all .2s;user-select:none;white-space:nowrap;letter-spacing:.01em;
+}
+.phase-toggle:hover{background:var(--s3);color:var(--text);border-color:var(--border3)}
+.phase-toggle.active{background:var(--blue-d);color:var(--blue);border-color:rgba(59,130,246,.3)}
+.phase-toggle-arrow{display:inline-block;transition:transform .25s;font-size:9px}
+.phase-toggle.active .phase-toggle-arrow{transform:rotate(180deg)}
+
+/* hidden by default; shown when wrapper has .phases-open */
+.phase-cols{display:none}
+table.phases-open .phase-cols{display:table-cell}
+table.phases-open .phase-sum-col{display:none}
+
+/* summary dot column */
+.phase-sum-col{text-align:center;cursor:pointer;padding:6px 6px!important;width:90px}
+.phase-dot-row{display:flex;align-items:center;justify-content:center;gap:3px;flex-wrap:nowrap}
+.p-mini{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block;transition:transform .18s,box-shadow .18s;cursor:pointer}
+.phase-sum-col:hover .p-mini{transform:scale(1.35)}
+.p-done  {background:#10b981;box-shadow:0 0 4px rgba(16,185,129,.5)}
+.p-over  {background:#ef4444;box-shadow:0 0 4px rgba(239,68,68,.5)}
+.p-pend  {background:#f59e0b}
+.p-soon  {background:#f97316}
+.p-fut   {background:#475569}
+.p-tbd   {background:transparent;border:1px dashed #475569}
+
+/* Fixed frame with internal scroll */
+.table-wrap{
+  overflow-x:auto;
+  overflow-y:auto;
+  max-height:clamp(320px, 52vh, 580px);
+  position:relative;
+}
+/* Fade shadow at bottom to hint more rows */
+.table-wrap::after{
+  content:'';position:sticky;bottom:0;left:0;right:0;height:32px;display:block;
+  background:linear-gradient(to top,var(--s1) 0%,transparent 100%);
+  pointer-events:none;margin-top:-32px;
+}
+/* Auto layout fills full width when phases collapsed */
+table{width:100%;border-collapse:collapse;table-layout:auto}
+/* Fixed layout only when phases are expanded (need exact 60px phase cols) */
+table.phases-open{table-layout:fixed}
+
+/* Sticky column headers — stick to top of scrollable .table-wrap */
+thead tr.head-main th{
+  position:sticky;top:0;z-index:6;
+  padding:10px 9px;text-align:left;font-size:10px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--text3);
+  background:var(--s2);border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;user-select:none;transition:color .18s;overflow:hidden;
+  box-shadow:0 1px 0 var(--border);
+}
+thead tr.head-main th:hover{color:var(--text2)}
+thead tr.head-main th.sort-active{color:var(--blue)}
+thead tr.phase-subhead th{
+  position:sticky;top:37px;z-index:5;
+  padding:6px 3px;text-align:center;font-size:9px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--text3);
+  background:var(--s2);border-bottom:1px solid var(--border);cursor:default;
+  box-shadow:0 1px 0 var(--border);
+}
+tbody td{
+  padding:8px 9px;border-bottom:1px solid var(--border);
+  font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:background .12s;
+}
+tbody tr{opacity:0;animation:rowIn .3s ease forwards}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--s2)}
+
+/* frozen cols */
+thead tr.head-main th:nth-child(1),thead tr.phase-subhead th:nth-child(1),tbody td:nth-child(1){position:sticky;left:0;z-index:4;background:var(--s2);width:100px;min-width:100px;max-width:100px}
+thead tr.head-main th:nth-child(2),thead tr.phase-subhead th:nth-child(2),tbody td:nth-child(2){position:sticky;left:100px;z-index:4;background:var(--s2);min-width:160px;width:220px;max-width:230px}
+tbody td:nth-child(1){background:var(--s1)}
+tbody td:nth-child(2){background:var(--s1)}
+tbody tr:hover td:nth-child(1),tbody tr:hover td:nth-child(2){background:var(--s2)!important}
+thead tr.head-main th:nth-child(2)::after,thead tr.phase-subhead th:nth-child(2)::after,tbody td:nth-child(2)::after{content:'';position:absolute;top:0;right:-10px;bottom:0;width:10px;background:linear-gradient(to right,var(--s1),transparent);pointer-events:none}
+thead tr.head-main th:nth-child(2)::after{background:linear-gradient(to right,var(--s2),transparent)}
+/* Corner cells (frozen + sticky header) need highest z-index */
+thead tr.head-main th:nth-child(1),thead tr.head-main th:nth-child(2){z-index:9}
+thead tr.phase-subhead th:nth-child(1),thead tr.phase-subhead th:nth-child(2){z-index:8}
+/* Non-frozen: min-widths only — auto layout distributes remaining space */
+.col-flow{min-width:76px;width:76px}
+thead tr.head-main th:nth-child(4),thead tr.phase-subhead th:nth-child(4),tbody td:nth-child(4){min-width:72px;width:80px}
+.col-start{min-width:68px;width:72px;font-family:var(--mono);font-size:11px}
+.col-end{min-width:68px;width:72px;font-family:var(--mono);font-size:11px}
+.phase-sum-col{min-width:80px;width:90px;max-width:110px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.01em;transition:transform .15s}
+.badge:hover{transform:scale(1.06)}
+.b-in {background:rgba(59,130,246,.1);  color:#1d4ed8;border:1px solid rgba(59,130,246,.2)}
+.b-out{background:rgba(5,150,105,.1);   color:#065f46;border:1px solid rgba(5,150,105,.2)}
+.b-yet{background:rgba(100,116,139,.08);color:#475569;border:1px solid rgba(100,116,139,.18)}
+.b-ip {background:rgba(217,119,6,.1);   color:#92400e;border:1px solid rgba(217,119,6,.2)}
+.b-done{background:rgba(5,150,105,.1);  color:#065f46;border:1px solid rgba(5,150,105,.2)}
+
+/* phase cells */
+.phase-cell{text-align:center;width:60px;cursor:pointer;user-select:none;padding:5px 2px!important}
+.phase-cell:hover .phase-date{transform:scale(1.12)}
+.phase-date{display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .18s}
+.phase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:transform .18s,box-shadow .18s}
+.phase-cell:hover .phase-dot{transform:scale(1.3)}
+.phase-val{font-size:11px;font-family:var(--mono);font-weight:500;letter-spacing:-.01em}
+.phase-icon{font-size:9px;line-height:1;margin-top:1px}
+.ph-done .phase-dot{background:var(--green);box-shadow:0 0 7px rgba(16,185,129,.6)}
+.ph-done .phase-val{color:var(--green);font-weight:600}
+.ph-overdue .phase-dot{background:var(--red);box-shadow:0 0 7px rgba(239,68,68,.6)}
+.ph-overdue .phase-val{color:var(--red);font-weight:600}
+.ph-pending .phase-dot{background:var(--amber);animation:pulse 1.8s infinite;--pulse-c:rgba(245,158,11,.4)}
+.ph-pending .phase-val{color:var(--amber)}
+.ph-soon .phase-dot{background:var(--orange);box-shadow:0 0 6px rgba(249,115,22,.4)}
+.ph-soon .phase-val{color:var(--orange)}
+.ph-future .phase-dot{background:var(--text3)}
+.ph-future .phase-val{color:var(--text3)}
+.ph-tbd .phase-dot{background:transparent;border:1px dashed var(--text3)}
+.ph-tbd .phase-val{color:var(--text3)}
+
+.table-footer{padding:9px 14px;font-size:12px;color:var(--text2);font-family:var(--mono);border-top:1px solid var(--border)}
+
+/* ── SMART POPUP ─────────────────────────────────────────────── */
+.smart-popup{
+  position:fixed;z-index:1000;pointer-events:none;
+  background:#f4f7fb;border:1px solid var(--border2);border-radius:var(--rl);
+  padding:12px 14px;min-width:180px;max-width:260px;
+  box-shadow:0 8px 30px rgba(30,41,59,.14),0 0 0 1px rgba(30,41,59,.04);
+  font-size:12px;color:var(--text);
+  animation:popupIn .18s cubic-bezier(.34,1.56,.64,1) both;
+  backdrop-filter:blur(12px);
+}
+.smart-popup.hiding{animation:popupOut .14s ease both}
+.popup-title{font-weight:700;font-size:13px;margin-bottom:8px;letter-spacing:-.01em}
+.popup-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:11px}
+.popup-label{color:var(--text3)}
+.popup-val{color:var(--text);font-weight:600;font-family:var(--mono);font-size:11px}
+.popup-divider{border:none;border-top:1px solid var(--border);margin:8px 0}
+.popup-hint{font-size:10px;color:var(--text3);text-align:center;margin-top:6px;font-style:italic}
+.popup-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.popup-status{display:flex;align-items:center;gap:6px}
+.popup-bar-wrap{width:100%;height:4px;background:var(--s3);border-radius:2px;margin-top:6px;overflow:hidden}
+.popup-bar{height:100%;border-radius:2px;transition:width .4s ease}
+
+/* ── KPI POPUP ───────────────────────────────────────────────── */
+.kpi-popup-stat{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
+.kpi-popup-stat:last-child{border-bottom:none}
+
+/* ── EDITOR ──────────────────────────────────────────────────── */
+.editor-toolbar{display:flex;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap;align-items:center}
+.editor-search{font-family:'Inter',sans-serif;font-size:12px;padding:7px 12px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);color:var(--text);outline:none;width:260px;transition:all .2s}
+.editor-search:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.editor-search::placeholder{color:var(--text3)}
+.editor-table-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);overflow:auto;max-height:calc(100vh - 230px)}
+.editor-table{width:100%;border-collapse:collapse;min-width:1100px}
+.editor-table thead th{position:sticky;top:0;z-index:10;padding:9px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);background:var(--s2);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.editor-table tbody td{padding:4px 6px;border-bottom:1px solid var(--border);vertical-align:middle}
+.editor-table tbody tr:hover td{background:rgba(59,130,246,.05)}
+.cell-input{font-family:'Inter',sans-serif;font-size:12px;padding:5px 8px;background:var(--s2);border:1px solid transparent;border-radius:6px;color:var(--text);outline:none;width:100%;transition:all .15s}
+.cell-input:focus{border-color:var(--blue);background:var(--s1)}
+.cell-select{font-family:'Inter',sans-serif;font-size:12px;padding:5px 8px;background:var(--s2);border:1px solid transparent;border-radius:6px;color:var(--text);outline:none;cursor:pointer;width:100%}
+.cell-select:focus{border-color:var(--blue)}
+.row-num{font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center}
+.act-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:3px 7px;border-radius:6px;font-size:14px;transition:all .15s}
+.act-btn:hover{background:var(--s2);color:var(--text)}
+.act-btn.del:hover{color:var(--red)}
+
+/* ── MODAL ───────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:var(--rxl);padding:1.75rem;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:scaleIn .22s cubic-bezier(.34,1.3,.64,1);box-shadow:0 16px 50px rgba(0,0,0,.14)}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:1.4rem;letter-spacing:-.02em}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:1.2rem}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)}
+.form-input,.form-select{font-family:'Inter',sans-serif;font-size:13px;padding:8px 11px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);outline:none;transition:all .18s}
+.form-input:focus,.form-select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.phase-section-title{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em}
+.phases-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.2rem}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--border)}
+
+/* ── IMPORT/EXPORT ───────────────────────────────────────────── */
+.io-panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);padding:1.4rem 1.5rem;margin-bottom:1.2rem}
+.io-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--blue);margin-bottom:1rem;
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);
+  border-radius:6px;padding:4px 12px 4px 10px;width:fit-content;
+}
+.io-title::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--blue);flex-shrink:0;display:inline-block}
+.io-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.io-note{font-size:11px;color:var(--text3);margin-top:10px;font-family:var(--mono);line-height:1.7}
+.csv-textarea{width:100%;margin-top:10px;min-height:120px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:12px;padding:10px;outline:none;resize:vertical;transition:border-color .18s}
+.csv-textarea:focus{border-color:var(--blue)}
+/* Excel import */
+.xl-drop{
+  border:2px dashed var(--border2);border-radius:var(--rxl);
+  padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;
+  background:var(--s2);margin-top:10px;
+}
+.xl-drop:hover,.xl-drop.drag-over{border-color:var(--blue);background:rgba(59,130,246,.05)}
+.xl-drop-icon{font-size:28px;margin-bottom:8px}
+.xl-drop-text{font-size:13px;font-weight:500;color:var(--text2)}
+.xl-drop-sub{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+.xl-preview{margin-top:12px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:none}
+.xl-preview-header{padding:8px 12px;background:var(--s3);font-size:11px;font-weight:600;color:var(--text2);display:flex;align-items:center;justify-content:space-between}
+.xl-preview-table{overflow-x:auto;max-height:200px}
+.xl-preview-table table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono)}
+.xl-preview-table th{padding:6px 10px;background:var(--s3);color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--border)}
+.xl-preview-table td{padding:5px 10px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.xl-preview-table tr:last-child td{border-bottom:none}
+.xl-map-section{padding:10px 12px;border-top:1px solid var(--border)}
+.xl-map-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.xl-map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.xl-map-row{display:flex;flex-direction:column;gap:3px}
+.xl-map-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.xl-map-select{font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);color:var(--text);outline:none;transition:border-color .15s}
+.xl-map-select:focus{border-color:var(--blue)}
+.xl-actions{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.xl-mode{display:flex;gap:6px;margin-left:auto;align-items:center;font-size:12px;color:var(--text2)}
+.io-section-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--cyan);margin-bottom:10px;
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(8,145,178,.08);border:1px solid rgba(8,145,178,.18);
+  border-radius:6px;padding:4px 12px 4px 10px;width:fit-content;
+}
+.io-section-title::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--cyan);display:inline-block;flex-shrink:0}
+
+/* ── TOAST ───────────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:999;
+  display:flex;align-items:center;gap:10px;
+  background:var(--s1);border:1px solid var(--border2);color:var(--text);
+  padding:12px 20px;border-radius:var(--rl);font-size:13px;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.1);
+  opacity:0;transform:translateY(12px) scale(.95);
+  transition:all .28s cubic-bezier(.34,1.3,.64,1);pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0) scale(1)}
+.toast-icon{font-size:16px}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media(max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
+  .charts-row2{grid-template-columns:1fr}
+  .main{padding:1.25rem}
+  .header,.nav-tabs,.plan-bar{padding:0 1.25rem}
+  .gantt-label{width:110px}
+}
+@media(max-width:700px){
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi-val{font-size:24px}
+  .header{padding:0 1rem;height:56px}
+  .header-sub,.live-badge{display:none}
+  .header-right .btn:not(.primary){display:none}
+  .plan-bar{padding:0 1rem;top:56px}
+  .plan-btn{padding:10px 14px;font-size:12px}
+  .plan-btn-sub{display:none}
+  .nav-tabs{padding:0 1rem;top:138px}
+  .nav-tab{padding:10px 12px;font-size:12px}
+  .main{padding:1rem}
+  .search-box{width:150px}
+  .phase-cols{display:none}
+  .col-flow,.col-start,.col-end{display:none}
+  .mobile-hide{display:none!important}
+  .gantt-label{width:90px}
+}
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr}
+  .form-grid,.phases-grid{grid-template-columns:1fr}
+  .plan-btn-count{display:none}
+}
+
+/* ── PLAN SWITCHER ───────────────────────────────────────── */
+/* ── PLAN FILTER BAR ──────────────────────────────────────── */
+.plan-bar{
+  position:sticky;top:62px;z-index:198;
+  background:rgba(232,237,245,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border2);
+  padding:10px 2rem;display:flex;align-items:center;gap:12px;
+  animation:fadeIn .4s .05s ease both;
+}
+.plan-bar-label{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text3);white-space:nowrap;padding-right:4px;
+}
+.plan-cards{display:flex;gap:10px;flex:1}
+.plan-btn{
+  position:relative;display:flex;align-items:center;gap:12px;
+  flex:1;max-width:380px;
+  padding:10px 18px;border-radius:var(--rl);cursor:pointer;user-select:none;
+  border:2px solid var(--border);background:var(--s1);
+  transition:all .22s;
+}
+.plan-btn:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(30,41,59,.08)}
+.plan-btn.active-int{
+  border-color:var(--blue);
+  background:linear-gradient(135deg,rgba(59,130,246,.07),rgba(59,130,246,.02));
+  box-shadow:0 4px 18px rgba(59,130,246,.15);
+}
+.plan-btn.active-scm{
+  border-color:var(--purple);
+  background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(124,58,237,.02));
+  box-shadow:0 4px 18px rgba(124,58,237,.15);
+}
+.plan-btn-icon{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  background:var(--s3);transition:all .22s;
+}
+.plan-btn.active-int .plan-btn-icon{background:rgba(59,130,246,.15)}
+.plan-btn.active-scm .plan-btn-icon{background:rgba(124,58,237,.15)}
+.plan-btn-label{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.plan-btn-title{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);line-height:1.2;transition:color .2s}
+.plan-btn.active-int .plan-btn-title{color:var(--blue)}
+.plan-btn.active-scm .plan-btn-title{color:var(--purple)}
+.plan-btn-sub{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plan-btn.active-int .plan-btn-sub{color:rgba(59,130,246,.7)}
+.plan-btn.active-scm .plan-btn-sub{color:rgba(124,58,237,.7)}
+.plan-btn-count{
+  flex-shrink:0;font-size:13px;font-weight:700;font-family:var(--mono);
+  padding:3px 10px;border-radius:20px;
+  background:var(--s3);color:var(--text3);
+  transition:all .22s;
+}
+.plan-btn.active-int .plan-btn-count{background:rgba(59,130,246,.15);color:var(--blue)}
+.plan-btn.active-scm .plan-btn-count{background:rgba(124,58,237,.15);color:var(--purple)}
+.plan-active-dot{
+  position:absolute;top:10px;right:12px;
+  width:7px;height:7px;border-radius:50%;
+  background:var(--green);
+  display:none;
+  animation:glow 2s ease-in-out infinite;
+}
+.plan-btn.active-int .plan-active-dot,.plan-btn.active-scm .plan-active-dot{display:block}
+.plan-btn.active-int .plan-active-dot{background:var(--blue)}
+.plan-btn.active-scm .plan-active-dot{background:var(--purple)}
+.plan-bar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+@keyframes planSlideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+.plan-switching .kpi-grid,.plan-switching .charts-row,.plan-switching .gantt-wrap,.plan-switching .table-section{
+  animation:planSlideIn .3s ease both;
+}
+
+@media(max-width:700px){
+  .plan-bar{padding:8px 1rem;gap:8px}
+  .plan-btn{padding:8px 12px;gap:8px}
+  .plan-btn-sub{display:none}
+  .plan-btn-icon{width:30px;height:30px;font-size:14px}
+  .plan-btn-title{font-size:12px}
+  .plan-btn-count{font-size:11px;padding:2px 7px}
+  .plan-bar-label{display:none}
+}
+/* ── DEADLINE MISSED ──────────────────────────────────────── */
+.defaulters-wrap{
+  border-radius:var(--rxl);margin-bottom:1.5rem;overflow:hidden;
+  box-shadow:0 4px 24px rgba(220,38,38,.1),0 0 0 1.5px rgba(220,38,38,.22);
+  opacity:0;animation:fadeUp .55s .32s ease forwards;
+}
+.defaulters-header{
+  padding:14px 1.5rem 14px;
+  background:linear-gradient(120deg,#fff1f2 0%,#fff7f7 55%,var(--s1) 100%);
+  border-bottom:1px solid rgba(220,38,38,.12);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.defaulters-icon{
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  box-shadow:0 4px 14px rgba(220,38,38,.35);
+}
+.defaulters-heading{flex:1;min-width:0}
+.defaulters-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:#991b1b;display:inline-flex;align-items:center;gap:8px;
+  background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.22);
+  border-radius:6px;padding:4px 12px 4px 10px;width:fit-content;
+}
+.defaulters-title::before{content:'';width:3px;height:13px;border-radius:2px;background:#dc2626;flex-shrink:0;display:inline-block}
+.defaulters-subtitle{font-size:11px;color:#b91c1c;margin-top:2px;opacity:.75}
+.defaulters-stats{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.defaulters-count{
+  font-size:22px;font-weight:800;font-family:var(--mono);
+  color:#dc2626;letter-spacing:-.04em;line-height:1;
+}
+.defaulters-count-label{font-size:10px;font-weight:600;color:#b91c1c;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;text-align:right}
+
+.defaulters-body{
+  background:var(--s1);
+  max-height:320px;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:#fca5a5 #fff1f2;
+}
+.defaulters-body::-webkit-scrollbar{width:6px}
+.defaulters-body::-webkit-scrollbar-track{background:#fff1f2;border-radius:3px}
+.defaulters-body::-webkit-scrollbar-thumb{background:#fca5a5;border-radius:3px}
+.defaulters-body::-webkit-scrollbar-thumb:hover{background:#ef4444}
+
+.defaulter-row{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;gap:14px;
+  padding:11px 1.5rem;
+  border-bottom:1px solid rgba(220,38,38,.07);
+  transition:background .15s;
+}
+.defaulter-row:last-child{border-bottom:none}
+.defaulter-row:hover{background:rgba(220,38,38,.035)}
+
+.defaulter-num{
+  font-size:10px;font-weight:700;font-family:var(--mono);
+  color:var(--red);opacity:.5;width:22px;text-align:right;flex-shrink:0;
+}
+.defaulter-grp{
+  flex-shrink:0;font-size:10px;font-weight:700;
+  padding:3px 10px;border-radius:20px;white-space:nowrap;
+  letter-spacing:.01em;
+}
+.defaulter-main{min-width:0;display:flex;flex-direction:column;gap:5px}
+.defaulter-name{
+  font-size:11px;font-family:var(--mono);color:var(--text);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  line-height:1.4;
+}
+.defaulter-phases{display:flex;flex-wrap:wrap;gap:5px}
+.defaulter-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;padding:3px 9px;border-radius:5px;
+  background:#fff1f2;color:#991b1b;
+  border:1px solid rgba(220,38,38,.2);
+  transition:background .15s;
+}
+.defaulter-tag:hover{background:rgba(220,38,38,.1)}
+.defaulter-tag-dot{width:5px;height:5px;border-radius:50%;background:#ef4444;flex-shrink:0}
+.defaulter-tag-name{font-weight:600;color:#b91c1c}
+.defaulter-tag-sep{color:rgba(153,27,27,.35)}
+.defaulter-tag-date{font-family:var(--mono);font-weight:500;color:#991b1b}
+.defaulter-days{
+  flex-shrink:0;font-size:10px;font-weight:700;font-family:var(--mono);
+  color:#dc2626;background:rgba(220,38,38,.08);
+  padding:3px 8px;border-radius:5px;white-space:nowrap;
+}
+
+.defaulters-empty{
+  padding:1.5rem;
+  display:flex;align-items:center;gap:14px;
+  background:linear-gradient(120deg,rgba(5,150,105,.04),transparent);
+}
+.defaulters-empty-icon{
+  width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,#059669,#047857);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 4px 12px rgba(5,150,105,.25);
+}
+.defaulters-empty-text{font-size:13px;font-weight:600;color:#065f46;line-height:1.4}
+.defaulters-empty-sub{font-size:11px;color:#059669;margin-top:2px;opacity:.75}
+
+/* ── SYSTEM / CATEGORY COMPLETION ───────────────────────── */
+.syscomp-wrap{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--rxl);
+  margin-bottom:1.5rem;overflow:hidden;
+  opacity:0;animation:fadeUp .55s .33s ease forwards;
+}
+.syscomp-header{padding:12px 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.syscomp-body{padding:.9rem 1.5rem;display:flex;flex-direction:column;gap:9px}
+.syscomp-row{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:12px}
+.syscomp-label{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.syscomp-track{height:10px;background:var(--s3);border-radius:5px;overflow:hidden}
+.syscomp-bar{height:100%;border-radius:5px;position:relative;transition:width .9s cubic-bezier(.34,1.2,.64,1)}
+.syscomp-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,rgba(255,255,255,.2));border-radius:5px}
+.syscomp-pct{font-size:11px;font-weight:700;font-family:var(--mono);text-align:right;white-space:nowrap}
+.syscomp-counts{font-size:10px;color:var(--text3);font-family:var(--mono);text-align:right;line-height:1.3}
+.syscomp-col{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+@media(max-width:700px){
+  .syscomp-row{grid-template-columns:90px 1fr 44px}
+  .syscomp-label{font-size:10px}
+}
+
+</style>
+</head>
+<body>
+<canvas id="particleCanvas"></canvas>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo" id="headerLogo">R2</div>
+    <div>
+      <div class="header-title">Project Synergy Neptune - Release 2</div>
+      <div class="header-sub">Integration Plan &amp; SCM Plan · Interactive Tracker</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <button class="btn mobile-hide" onclick="exportCSV()">&#11015; Export</button>
+    <button class="btn primary" onclick="openAddModal()">+ Add</button>
+  </div>
+</header>
+
+<!-- PLAN FILTER BAR -->
+<div class="plan-bar">
+  <span class="plan-bar-label">View plan:</span>
+  <div class="plan-cards">
+    <div class="plan-btn active-int" id="ptab-int" onclick="switchPlan('int')">
+      <div class="plan-btn-icon">&#128279;</div>
+      <div class="plan-btn-label">
+        <div class="plan-btn-title">Integration Plan</div>
+        <div class="plan-btn-sub">72 Integrations &middot; 14 Systems</div>
+      </div>
+      <span class="plan-btn-count" id="int-count">72</span>
+      <span class="plan-active-dot"></span>
+    </div>
+    <div class="plan-btn" id="ptab-scm" onclick="switchPlan('scm')">
+      <div class="plan-btn-icon">&#128230;</div>
+      <div class="plan-btn-label">
+        <div class="plan-btn-title">SCM Plan</div>
+        <div class="plan-btn-sub">100 WRICEFs &middot; 6 Categories</div>
+      </div>
+      <span class="plan-btn-count" id="scm-count">100</span>
+      <span class="plan-active-dot"></span>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="switchView('dashboard',this)">&#128202; Dashboard</div>
+  <div class="nav-tab" onclick="switchView('editor',this)">&#9999;&#65039; Edit data</div>
+  <div class="nav-tab" onclick="switchView('import',this)">&#11014; Import / Export</div>
+</div>
+
+<div class="main">
+<div class="view active" id="view-dashboard">
+  <div class="kpi-grid" id="kpis"></div>
+  <div class="charts-row">
+    <div class="card" style="animation-delay:.16s">
+      <div class="card-title" id="chart-sys-title">Integrations by system</div>
+      <div id="legend-sys" class="legend"></div>
+      <div style="position:relative;height:220px"><canvas id="chartSys" role="img" aria-label="Bar chart"></canvas></div>
+    </div>
+    <div class="card" style="animation-delay:.22s">
+      <div class="card-title">Phase completion</div>
+      <div class="comp-pair">
+        <div class="comp-half">
+          <div class="comp-half-title">📅 Planned as of today</div>
+          <div style="position:relative;height:150px;width:100%"><canvas id="chartPlanned" role="img" aria-label="Planned completion"></canvas></div>
+          <div id="legend-planned" class="legend" style="justify-content:center"></div>
+        </div>
+        <div class="comp-divider"></div>
+        <div class="comp-half">
+          <div class="comp-half-title">✓ Actual</div>
+          <div style="position:relative;height:150px;width:100%"><canvas id="chartCompletion" role="img" aria-label="Phase completion"></canvas></div>
+          <div id="legend-completion" class="legend" style="justify-content:center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="charts-row2">
+    <div class="card" style="animation-delay:.28s">
+      <div class="card-title" id="chart-status-title">Items by status</div>
+      <div id="legend-status" class="legend" style="margin-bottom:8px"></div>
+      <div class="chart-scroll-wrap" id="chartStatusWrap">
+        <canvas id="chartStatus" role="img" aria-label="Items by status" style="display:block"></canvas>
+      </div>
+      <div class="chart-scroll-hint" id="chartScrollHint">&#9660; Scroll to see all statuses</div>
+    </div>
+  </div>
+  <div class="gantt-wrap">
+    <div class="card-title" id="gantt-title">Timeline — system delivery windows</div>
+    <div id="gantt"></div>
+  </div>
+  <div class="defaulters-wrap" id="defaultersWrap">
+    <div class="defaulters-header">
+      <div class="defaulters-icon">⏰</div>
+      <div class="defaulters-heading">
+        <div class="defaulters-title">Deadline Missed Items</div>
+        <div class="defaulters-subtitle">Phases past their planned date and not marked as completed</div>
+      </div>
+      <div class="defaulters-stats">
+        <div>
+          <div class="defaulters-count" id="defaultersCount">0</div>
+          <div class="defaulters-count-label">items</div>
+        </div>
+      </div>
+    </div>
+    <div class="defaulters-body" id="defaultersBody"></div>
+  </div>
+  <div class="syscomp-wrap" id="syscompWrap">
+    <div class="syscomp-header">
+      <div class="card-title" id="syscomp-title">System-wise phase completion</div>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">Phases marked ✓ done / total phases per group</span>
+    </div>
+    <div class="syscomp-body" id="syscompBody"></div>
+  </div>
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-header-top">
+        <div class="table-title" id="table-title">All integrations</div>
+        <div class="filters">
+          <input class="search-box" id="search" placeholder="&#128269; Search..." oninput="render()"/>
+          <select class="filter-select" id="fGroup" onchange="render()"><option value="">All groups</option></select>
+          <select class="filter-select" id="fStatus" onchange="render()"><option value="">All statuses</option></select>
+          <button class="phase-toggle" id="phaseToggleBtn" onclick="togglePhases()">
+            <span>&#128197; Show phases</span><span class="phase-toggle-arrow">&#9660;</span>
+          </button>
+        </div>
+      </div>
+      <div class="phase-key hidden" id="phaseKey">
+        <span style="font-weight:600;color:var(--text2);font-size:11px">Phase key:</span>
+        <span class="pk-item"><span class="pk-dot" style="background:var(--green);box-shadow:0 0 5px rgba(5,150,105,.5)"></span><span style="color:var(--green)">Done &#10003;</span></span>
+        <span class="pk-item"><span class="pk-dot" style="background:var(--red)"></span><span style="color:var(--red)">Overdue &#10007;</span></span>
+        <span class="pk-item"><span class="pk-dot" style="background:var(--amber)"></span><span style="color:var(--amber)">Awaiting</span></span>
+        <span class="pk-item"><span class="pk-dot" style="background:var(--orange)"></span><span style="color:var(--orange)">Due &le;14d</span></span>
+        <span class="pk-item"><span class="pk-dot" style="background:var(--text3)"></span><span>Upcoming</span></span>
+        <span class="pk-item"><span class="pk-dot" style="border:1px dashed var(--text3)"></span><span>TBD</span></span>
+        <span style="margin-left:auto;font-size:10px;color:var(--text3);font-style:italic" class="mobile-hide">Hover dot for details &middot; Click to toggle &#10003;/&#10007;</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="mainTable">
+        <colgroup>
+          <col style="width:100px;min-width:100px"><col style="width:220px;max-width:230px">
+          <col class="col-flow"><col>
+          <col class="col-start"><col class="col-end">
+          <col class="phase-sum-col">
+          <col class="phase-cols" style="width:60px"><col class="phase-cols" style="width:60px">
+          <col class="phase-cols" style="width:60px"><col class="phase-cols" style="width:60px">
+          <col class="phase-cols" style="width:60px"><col class="phase-cols" style="width:60px">
+          <col class="phase-cols" style="width:60px">
+        </colgroup>
+        <thead>
+          <tr class="head-main">
+            <th onclick="sortTable('group')" id="th-group">System</th>
+            <th onclick="sortTable('name')" id="th-name">Item</th>
+            <th onclick="sortTable('col3')" id="th-col3" class="col-flow">Flow</th>
+            <th onclick="sortTable('status')" id="th-status">Status</th>
+            <th onclick="sortTable('start')" id="th-start" class="col-start">Start</th>
+            <th onclick="sortTable('end')" id="th-end" class="col-end">End</th>
+            <th class="phase-sum-col" onclick="togglePhases()" style="text-align:center;color:var(--text2);cursor:pointer;font-size:10px" title="Click to expand">Phases</th>
+            <th colspan="7" class="phase-cols" style="text-align:center;color:var(--blue);cursor:default;font-size:10px">Phase dates</th>
+          </tr>
+          <tr class="phase-subhead" id="phase-header-row">
+            <th></th><th></th><th class="col-flow"></th><th></th>
+            <th class="col-start"></th><th class="col-end"></th><th class="phase-sum-col"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-footer" id="rowCount"></div>
+  </div>
+</div>
+
+<div class="view" id="view-editor">
+  <div class="editor-toolbar">
+    <input class="editor-search" id="editorSearch" placeholder="&#128269; Filter rows..." oninput="renderEditor()"/>
+    <button class="btn primary" onclick="openAddModal()">+ Add row</button>
+    <span id="editCount" style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+  </div>
+  <div class="editor-table-wrap">
+    <table class="editor-table">
+      <thead><tr>
+        <th style="width:36px">#</th>
+        <th id="eh-group" style="min-width:110px">System/Category</th>
+        <th style="min-width:280px">Name</th>
+        <th id="eh-col3" style="min-width:90px">Flow/Assigned</th>
+        <th style="min-width:120px">Status</th>
+        <th style="min-width:115px">Start</th>
+        <th style="min-width:115px">End</th>
+        <th style="width:90px;text-align:center">Actions</th>
+      </tr></thead>
+      <tbody id="editorTbody"></tbody>
+    </table>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-top:10px;font-family:var(--mono)">Click any cell to edit &middot; Auto-saves &middot; &#10002; for phase dates</div>
+</div>
+
+<div class="view" id="view-import">
+  <div class="io-panel">
+    <div class="io-title">Export your data</div>
+    <div class="io-row">
+      <button class="btn primary" onclick="exportCSV()">&#11015; Download CSV</button>
+      <button class="btn" onclick="exportXLSX()">&#11015; Download Excel</button>
+      <button class="btn" onclick="copyJSON()">{ } Copy JSON</button>
+    </div>
+    <div class="io-note">Exports the currently active plan (<strong id="export-plan-label">R2 Integrations</strong>). CSV and Excel include all columns and phase dates.</div>
+  </div>
+
+  <!-- EXCEL IMPORT -->
+  <div class="io-panel">
+    <div class="io-section-title">&#128196; Import from Excel (.xlsx / .xls)</div>
+
+    <!-- Drop zone -->
+    <div class="xl-drop" id="xlDrop"
+         onclick="document.getElementById('xlFile').click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="handleXlDrop(event)">
+      <input type="file" id="xlFile" accept=".xlsx,.xls" style="display:none" onchange="handleXlFile(event)"/>
+      <div class="xl-drop-icon">&#128202;</div>
+      <div class="xl-drop-text">Click to upload or drag &amp; drop an Excel file</div>
+      <div class="xl-drop-sub">Supports .xlsx and .xls &middot; Sheet with integrations or WRICEFs</div>
+    </div>
+
+    <!-- Preview + column mapper -->
+    <div class="xl-preview" id="xlPreview">
+      <div class="xl-preview-header">
+        <span id="xlPreviewTitle">Preview</span>
+        <span id="xlSheetSel" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)">
+          Sheet: <select id="xlSheet" onchange="onSheetChange()" style="font-size:11px;padding:2px 6px;background:var(--s2);border:1px solid var(--border);border-radius:4px;color:var(--text);outline:none"></select>
+        </span>
+      </div>
+      <div class="xl-preview-table" id="xlPreviewTable"></div>
+
+      <!-- Column mapping -->
+      <div class="xl-map-section">
+        <div class="xl-map-title">Map columns to fields</div>
+        <div class="xl-map-grid" id="xlMapGrid"></div>
+      </div>
+
+      <div class="xl-actions">
+        <div style="font-size:11px;color:var(--text3)">
+          <span id="xlRowCount">0 data rows detected</span>
+        </div>
+        <div class="xl-mode">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="radio" name="xlMode" value="append" checked style="accent-color:var(--blue)"/> Append to existing
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="radio" name="xlMode" value="replace" style="accent-color:var(--blue)"/> Replace all
+          </label>
+        </div>
+        <button class="btn primary" onclick="importFromXL()">&#11014; Import into <span id="xlImportLabel">Integrations</span></button>
+        <button class="btn" onclick="clearXlPreview()">Clear</button>
+      </div>
+    </div>
+    <div class="io-note" style="margin-top:10px">
+      <strong>Expected columns:</strong> For Integrations — System, Integration Name, Flow, Status, Start Date, End Date, Discussion 1…SIT.<br>
+      For SCM — Category, WRICEF Name, Assigned To, Status, Start Date, End Date, Discussion 1…UAT.<br>
+      Column mapping is flexible — select which Excel column maps to each field after upload.
+    </div>
+  </div>
+
+  <!-- CSV IMPORT -->
+  <div class="io-panel">
+    <div class="io-section-title">&#128196; Import from CSV</div>
+    <div class="io-row">
+      <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="importCSVFile(event)"/>
+      <button class="btn primary" onclick="document.getElementById('csvFile').click()">&#11014; Upload CSV</button>
+      <span style="font-size:12px;color:var(--text3)">or paste below</span>
+    </div>
+    <textarea class="csv-textarea" id="csvPaste" placeholder="Paste CSV content here..."></textarea>
+    <div class="io-row" style="margin-top:10px">
+      <button class="btn primary" onclick="importFromPaste()">Import pasted CSV</button>
+      <button class="btn danger" onclick="resetData()">&#9888; Reset to defaults</button>
+    </div>
+    <div class="io-note">CSV format: group,name,col3,status,start,end,phases,phaseDone (phases as semicolon-separated dates).</div>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Add item</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label" id="fld-group-lbl">System/Category</label><input class="form-input" id="fld-group" list="grp-dl"/><datalist id="grp-dl"></datalist></div>
+      <div class="form-group"><label class="form-label" id="fld-col3-lbl">Flow/Assigned To</label><input class="form-input" id="fld-col3"/></div>
+      <div class="form-group full"><label class="form-label">Name / ID</label><input class="form-input" id="fld-name"/></div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-select" id="fld-status">
+          <option value="">— Select status —</option>
+          <option>New</option>
+          <option>On Hold</option>
+          <option>Cancelled</option>
+          <option>On Hold with Business</option>
+          <option>FS Re-work</option>
+          <option>Scheduled</option>
+          <option>FS In Progress</option>
+          <option>In Review (BA)</option>
+          <option>In Approval (PM)</option>
+          <option>FS Approved</option>
+          <option>Dev Complete FS NA</option>
+          <option>Dev Scheduled</option>
+          <option>Dev In Progress</option>
+          <option>Dev In Review</option>
+          <option>TUT In Progress</option>
+          <option>On Hold With Functional</option>
+          <option>Released for FUT</option>
+          <option>FUT In Progress</option>
+          <option>Bug Fix</option>
+          <option>Converted to Standard</option>
+          <option>SIT Bug Fix</option>
+          <option>FUT Completed</option>
+          <option>CPI Test Completed</option>
+          <option>Pending With 3rd party</option>
+          <option>CPI Dev In-Progress</option>
+          <option>SIT Completed</option>
+          <option>UAT Bug Fix</option>
+          <option>UAT Completed</option>
+          <option>FS Revision</option>
+          <option>UAT in progress</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Start date</label><input class="form-input" type="date" id="fld-start"/></div>
+      <div class="form-group"><label class="form-label">End date</label><input class="form-input" type="date" id="fld-end"/></div>
+    </div>
+    <div class="phase-section-title">Phase dates &amp; status</div>
+    <div class="phases-grid" id="phasesGrid"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="smart-popup" id="popup" style="display:none"></div>
+<div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<script>
+const INT_PHASE_NAMES=['Discussion 1','Discussion 2','Func. Spec','API Dev','I-Flow Dev','Unit/CPI Test','SIT'];
+const SCM_PHASE_NAMES=['Discussion 1','Discussion 2','Func. Spec','Development','Unit Testing','SIT','UAT'];
+const INT_PHASE_SHORT=['Disc.1','Disc.2','F.Spec','API','I-Flow','Unit','SIT'];
+const SCM_PHASE_SHORT=['Disc.1','Disc.2','F.Spec','Dev','Unit','SIT','UAT'];
+const today=new Date('2026-04-16');
+const COLORS=['#3b82f6','#059669','#ea580c','#7c3aed','#d97706','#db2777','#0891b2','#65a30d','#a78bfa','#fb7185','#22d3ee','#4ade80','#f97316'];
+const STATUS_LIST=[
+  'New','On Hold','Cancelled','On Hold with Business',
+  'FS Re-work','Scheduled','FS In Progress','In Review (BA)','In Approval (PM)','FS Approved',
+  'Dev Complete FS NA','Dev Scheduled','Dev In Progress','Dev In Review',
+  'TUT In Progress','On Hold With Functional','Released for FUT',
+  'FUT In Progress','Bug Fix','Converted to Standard',
+  'SIT Bug Fix','FUT Completed','CPI Test Completed','Pending With 3rd party',
+  'CPI Dev In-Progress','SIT Completed',
+  'UAT Bug Fix','UAT Completed','FS Revision','UAT in progress'
+];
+const SC={};
+function sc(s){if(!SC[s]){const i=Object.keys(SC).length;SC[s]=COLORS[i%COLORS.length];}return SC[s];}
+
+const INT_DEFAULT=
+[
+  {system:"Nauka",name:"NEP-INT-0034-Customer FI Invoice",flow:"Inbound",status:"New",start:"2025-12-08",end:"2026-05-18",phases:["2025-12-08","2026-01-19","2026-04-14","2026-04-14","2026-04-16","2026-04-17","2026-05-18"]},
+  {system:"Nauka",name:"NEP-INT-0035-Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2025-12-08",end:"2026-05-18",phases:["2025-12-08","2026-01-19","2026-04-14","2026-04-14","2026-04-16","2026-04-17","2026-05-18"]},
+  {system:"Nauka",name:"NEP-INT-0036-Customer FI Credit Note",flow:"Inbound",status:"New",start:"2025-12-08",end:"2026-05-18",phases:["2025-12-08","2026-01-19","2026-04-14","2026-04-14","2026-04-16","2026-04-17","2026-05-18"]},
+  {system:"Nauka",name:"NEP-INT-0033-Customer FI Credit Note- Cancellation",flow:"Inbound",status:"New",start:"2025-12-08",end:"2026-05-18",phases:["2025-12-08","2026-01-19","2026-04-14","2026-04-14","2026-04-16","2026-04-17","2026-05-18"]},
+  {system:"Nauka",name:"NEP-INT-0032-Customer Payment Confirmation",flow:"Outbound",status:"New",start:"2025-12-08",end:"2026-05-18",phases:["2025-12-08","2026-01-19","2026-04-14",null,null,null,"2026-05-18"]},
+  {system:"Gateway",name:"NEP-INT-0083 - Internal Order Creation (against Job ID)",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0098 - Internal Order Change",flow:"Inbound",status:"New",start:"",end:"2026-05-05",phases:["2026-06-05","2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05"]},
+  {system:"Gateway",name:"NEP-INT-0099 - Internal order cancellation",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0085 - Vendor PO Creation*",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30",null,null,"2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0142 - Vendor PO Change/Delete*",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0093 - Vendor advance request create*",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0094 - Vendor advance request cancellation*",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0095 - Vendor invoice(PO Based)*",flow:"Outbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30",null,null,"2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0087 - Vendor Credit Note",flow:"Outbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0088 - Vendor Payment*",flow:"Outbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0086 - Vendor advance payment confirmation*",flow:"Outbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0089 - Customer FI Invoice",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0090 - Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0091 - Customer FI Credit Note",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30","2026-05-04","2026-05-05","2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0096 - Customer receipt  Confirmation",flow:"Outbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30",null,null,"2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0092 - Customer Advance",flow:"Inbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30",null,null,"2026-06-05"]},
+  {system:"Gateway",name:"NEP-INT-0097 - Customer advance payment confirmation",flow:"Outbound",status:"New",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-04-21","2026-04-23","2026-04-30",null,null,"2026-06-05"]},
+  {system:"CMS",name:"NEP-INT-0063 - Stock Balance - JV",flow:"Inbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04","2026-05-08","2026-05-11","2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0059 - Customer FI Invoice",flow:"Inbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04",null,null,"2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0060 - Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04","2026-05-08","2026-05-11","2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0061 - Customer FI Credit Note",flow:"Inbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04","2026-05-08","2026-05-11","2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0039 - Customer FI Credit Note Cancellation",flow:"Inbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04","2026-05-08","2026-05-11","2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0038 - Customer Payment/Adjustment Confirmation",flow:"Outbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04","2026-05-08","2026-05-11","2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0401 - Vendor Invoice Creation",flow:"Outbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04","2026-05-08","2026-05-11","2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0402 - Vendor Invoice Cancellation",flow:"Outbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04",null,null,"2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0403 - Vendor Credit Note",flow:"Outbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04",null,null,"2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0404 - Vendor Credit Note Cancellation",flow:"Outbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04",null,null,"2026-06-01"]},
+  {system:"CMS",name:"NEP-INT-0062 - Vendor Payment/Adjustment Confirmation*",flow:"Outbound",status:"New",start:"2026-04-22",end:"2026-06-01",phases:["2026-04-22","2026-04-29","2026-04-30","2026-05-04",null,null,"2026-06-01"]},
+  {system:"Anchor Point Visa",name:"NEP-INT-0044 - Customer FI Invoice",flow:"Inbound",status:"New",start:"2026-02-04",end:"2026-05-15",phases:["2026-02-04","2026-02-09","2026-04-15","2026-04-20","2026-04-22","2026-04-23","2026-05-15"]},
+  {system:"Anchor Point Visa",name:"NEP-INT-0045 - Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2026-02-04",end:"2026-05-15",phases:["2026-02-04","2026-02-09","2026-04-15","2026-04-20","2026-04-22","2026-04-23","2026-05-15"]},
+  {system:"Anchor Point Visa",name:"NEP-INT-0046 - Customer FI Credit Note",flow:"Inbound",status:"New",start:"2026-02-04",end:"2026-05-15",phases:["2026-02-04","2026-02-09","2026-04-15","2026-04-20","2026-04-22","2026-04-23","2026-05-15"]},
+  {system:"Anchor Point Visa",name:"NEP-INT-0143 - Customer Receipt Confirmation",flow:"Outbound",status:"New",start:"2026-02-04",end:"2026-05-15",phases:["2026-02-04","2026-02-09","2026-04-15","2026-04-20",null,null,"2026-05-15"]},
+  {system:"Travel Buddy",name:"NEP-INT-0071 - Customer FI Invoice",flow:"Inbound",status:"New",start:"2026-02-06",end:"2026-05-04",phases:["2026-02-06","2026-02-12","2026-04-16","2026-04-21","2026-04-24","2026-04-29","2026-05-04"]},
+  {system:"Travel Buddy",name:"NEP-INT-0072 - Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2026-02-06",end:"2026-05-04",phases:["2026-02-06","2026-02-12","2026-04-16","2026-04-21","2026-04-24","2026-04-29","2026-05-04"]},
+  {system:"Travel Buddy",name:"NEP-INT-0073 - Customer FI Credit Note",flow:"Inbound",status:"New",start:"2026-02-06",end:"2026-05-04",phases:["2026-02-06","2026-02-12","2026-04-16","2026-04-21","2026-04-24","2026-04-29","2026-05-04"]},
+  {system:"Travel Buddy",name:"NEP-INT-0074 - Customer Receipt Confirmation",flow:"Outbound",status:"New",start:"2026-02-06",end:"2026-05-04",phases:["2026-02-06","2026-02-12","2026-04-16","2026-04-21",null,null,"2026-05-04"]},
+  {system:"One Loop",name:"NEP-INT-0049 - Internal Order Creation (against Job ID)",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0406 - Internal Order Cancellation",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0050 - Vendor PO Creation*",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0405 - Vendor PO Change/Delete*",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05",null,null,"2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0084 - Vendor invoice(PO Based)*",flow:"Outbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05",null,null,"2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0051 - Vendor Payment Confirmation*",flow:"Outbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0078 - Customer FI Invoice",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0079 - Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0080 - Customer FI Credit Note",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0081 - Customer FI Credit Note Cancellation",flow:"Inbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"One Loop",name:"NEP-INT-0082 - Customer Receipt Confirmation",flow:"Outbound",status:"New",start:"2026-04-23",end:"2026-05-29",phases:["2026-04-23","2026-04-28","2026-04-29","2026-05-05","2026-05-11","2026-05-12","2026-05-29"]},
+  {system:"ZOHO Desk",name:"NEP-INT-0047 - ZOHO Ticket Information",flow:"Inbound",status:"New",start:"2026-04-27",end:"2026-06-08",phases:["2026-04-27","2026-05-04","2026-05-07","2026-05-14","2026-05-18","2026-05-19","2026-06-08"]},
+  {system:"ZOHO Desk",name:"NEP-INT-0075 - ZOHO Ticket Closed Status",flow:"Outbound",status:"New",start:"2026-04-27",end:"2026-06-08",phases:["2026-04-27","2026-05-04","2026-05-07","2026-05-14","2026-05-18","2026-05-19","2026-06-08"]},
+  {system:"Darwin Box",name:"NEP-INT-0407 - Payroll/Final Settlement",flow:"Inbound",status:"New",start:"2026-04-29",end:"2026-06-09",phases:["2026-04-29","2026-05-05","2026-05-08","2026-05-15","2026-05-18","2026-05-20","2026-06-09"]},
+  {system:"Darwin Box",name:"NEP-INT-0231 - Staff Loan / Salary Advance/Settlement",flow:"Inbound",status:"New",start:"2026-04-29",end:"2026-06-09",phases:["2026-04-29","2026-05-05","2026-05-08","2026-05-15","2026-05-18","2026-05-20","2026-06-09"]},
+  {system:"Market Place",name:"NEP-INT-0415 - Vendor PO Creation*",flow:"Inbound",status:"New",start:"2026-04-30",end:"2026-06-11",phases:["2026-04-30","2026-05-06","2026-05-11","2026-05-18","2026-05-21","2026-05-22","2026-06-11"]},
+  {system:"Market Place",name:"NEP-INT-0416 - Vendor PO Change/Delete*",flow:"Inbound",status:"New",start:"2026-04-30",end:"2026-06-11",phases:["2026-04-30","2026-05-06","2026-05-11","2026-05-18","2026-05-21","2026-05-22","2026-06-11"]},
+  {system:"Market Place",name:"NEP-INT-0417 - Invoice Reference Info*",flow:"Outbound",status:"New",start:"2026-04-30",end:"2026-06-11",phases:["2026-04-30","2026-05-06","2026-05-11","2026-05-18",null,null,"2026-06-11"]},
+  {system:"Market Place",name:"NEP-INT-0418 -Payment/Reversal Reference/Confirmation*",flow:"Outbound",status:"New",start:"2026-04-30",end:"2026-06-11",phases:["2026-04-30","2026-05-06","2026-05-11","2026-05-18",null,null,"2026-06-11"]},
+  {system:"OG",name:"NEP-INT-0410 - Customer FI Invoice",flow:"Inbound",status:"New",start:"2026-05-01",end:"2026-06-15",phases:["2026-05-01","2026-05-07","2026-05-12","2026-05-19","2026-05-22","2026-05-25","2026-06-15"]},
+  {system:"OG",name:"NEP-INT-0411 - Customer FI Invoice Cancellation",flow:"Inbound",status:"New",start:"2026-05-01",end:"2026-06-15",phases:["2026-05-01","2026-05-07","2026-05-12","2026-05-19","2026-05-22","2026-05-25","2026-06-15"]},
+  {system:"OG",name:"NEP-INT-0412 - Customer FI Credit Note",flow:"Inbound",status:"New",start:"2026-05-01",end:"2026-06-15",phases:["2026-05-01","2026-05-07","2026-05-12","2026-05-19","2026-05-22","2026-05-25","2026-06-15"]},
+  {system:"OG",name:"NEP-INT-0413 - Customer FI Debit Note",flow:"Inbound",status:"New",start:"2026-05-01",end:"2026-06-15",phases:["2026-05-01","2026-05-07","2026-05-12","2026-05-19","2026-05-22","2026-05-25","2026-06-15"]},
+  {system:"OG",name:"NEP-INT-0414 -Vendor Payment Confirmation*",flow:"Outbound",status:"New",start:"2026-05-01",end:"2026-06-15",phases:["2026-05-01","2026-05-07","2026-05-12","2026-05-19",null,null,"2026-06-15"]},
+  {system:"SAIL",name:"NEP-INT-0408 - Allotment",flow:"Inbound",status:"New",start:"2026-05-04",end:"2026-06-16",phases:["2026-05-04","2026-05-08","2026-05-13","2026-05-20","2026-05-26","2026-05-27","2026-06-16"]},
+  {system:"SAIL",name:"NEP-INT-0409 - Portage Bill",flow:"Inbound",status:"New",start:"2026-05-04",end:"2026-06-16",phases:["2026-05-04","2026-05-08","2026-05-13","2026-05-20","2026-05-26","2026-05-27","2026-06-16"]},
+  {system:"Vessel Portal",name:"NEP-INT-0122- VESSEL PORTAL MASTER",flow:"Inbound",status:"New",start:"2026-05-05",end:"2026-06-17",phases:["2026-05-05","2026-05-12","2026-05-15","2026-05-22","2026-05-28","2026-05-29","2026-06-17"]},
+  {system:"Vessel Portal",name:"NEP-INT-0148 - VESSEL PORTAL MASTER CHANGE",flow:"Inbound",status:"New",start:"2026-05-05",end:"2026-06-17",phases:["2026-05-05","2026-05-12","2026-05-15","2026-05-22","2026-05-28","2026-05-29","2026-06-17"]},
+  {system:"Amadeus-Zenmar",name:"NEP-INT-0076 - AMADEUS-ZENMER-JALHANSA-CUSTOMER FI INVOICE",flow:"Inbound",status:"New",start:"2026-05-05",end:"2026-06-17",phases:["2026-05-05","2026-05-12","2026-05-15","2026-05-22","2026-05-28","2026-05-29","2026-06-17"]},
+  {system:"IATA",name:"NEP-INT-0138 - IATA BSP FILE INTEGRATION",flow:"Inbound",status:"New",start:"2026-05-05",end:"2026-06-17",phases:["2026-05-05","2026-05-12","2026-05-15","2026-05-22","2026-05-28","2026-05-29","2026-06-17"]},
+  {system:"IATA",name:"NEP-INT-0234 - IATA BSP PDF FILE TRANSFER TO DWH",flow:"Inbound",status:"New",start:"2026-05-05",end:"2026-06-17",phases:["2026-05-05","2026-05-12","2026-05-15","2026-05-22","2026-05-28","2026-05-29","2026-06-17"]}
+];
+
+const SCM_DEFAULT=
+[
+  {category:"Conversion",name:"NEP-SCM-0178 - Vendor Pricing Conditions",assignedTo:"Prasanth",status:"New",start:"2026-06-01",end:"2026-06-30",phases:["2026-06-01","2026-06-08","2026-06-15","2026-06-17","2026-06-19","2026-06-23","2026-06-30"]},
+  {category:"Conversion",name:"NEP-SCM-0177 - Customer Pricing Conditions",assignedTo:"",status:"FUT Completed",start:"2025-12-08",end:"2026-02-08",phases:["2025-12-08","2026-01-19","2026-01-21","2026-01-27","2026-01-29","2026-01-30","2026-02-08"]},
+  {category:"Conversion",name:"NEP-SCM-0176 - Open Sale Orders",assignedTo:"",status:"FUT Completed",start:"2025-12-08",end:"2026-02-08",phases:["2025-12-08","2026-01-19","2026-01-21","2026-01-27","2026-01-29","2026-01-30","2026-02-08"]},
+  {category:"Conversion",name:"NEP-SCM-0478 - BP CUSTOMER MASTER CREATION",assignedTo:"",status:"FUT Completed",start:"2025-12-08",end:"2026-02-08",phases:["2025-12-08","2026-01-19","2026-01-21","2026-01-27","2026-01-29","2026-01-30","2026-02-08"]},
+  {category:"Conversion",name:"NEP-SCM-0165 - Serial Number Upload",assignedTo:"Ravi Kumar",status:"New",start:"2026-06-01",end:"2026-06-30",phases:["2026-06-01","2026-06-08","2026-06-15","2026-06-17","2026-06-19","2026-06-23","2026-06-30"]},
+  {category:"Conversion",name:"NEP-SCM-0161 - Employee Master Creation",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Conversion",name:"NEP-SCM-0531 - CLASS AND CHARTERISTICS",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Conversion",name:"NEP-SCM-0532 - MODEL PRODUCT SPECIFICATIONS",assignedTo:"Ravi Kumar",status:"New",start:"2026-06-01",end:"2026-06-30",phases:["2026-06-01","2026-06-08","2026-06-15","2026-06-17","2026-06-19","2026-06-23","2026-06-30"]},
+  {category:"Conversion",name:"NEP-SCM-0533 - PRODUCT CONSUMPTION",assignedTo:"Ravi Kumar",status:"New",start:"2026-06-01",end:"2026-06-30",phases:["2026-06-01","2026-06-08","2026-06-15","2026-06-17","2026-06-19","2026-06-23","2026-06-30"]},
+  {category:"Conversion",name:"NEP-SCM-0159 - Purchase Contracts Creation",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Conversion",name:"NEP-SCM-0227 - EXCEL UPLOAD PROGRAM TO MASS CREATE RFQ - MARINE MECHANICS & TURBOMOT",assignedTo:"Prasanth",status:"FS Approved",start:"2026-06-01",end:"2026-06-30",phases:["2026-06-01","2026-06-08","2026-06-15","2026-06-17","2026-06-19","2026-06-23","2026-06-30"]},
+  {category:"Conversion",name:"NEP-SCM-0491 - MATERIAL MASTER EXTENSION",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Conversion",name:"NEP-SCM-0154 - BP VENDOR MASTER EXTENSION",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0502 - Special stock transfer from Sales Inquiry to Sales Order",assignedTo:"Santosh",status:"In Review (BA)",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-02-07","2026-02-09","2026-06-05","2026-06-10","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0092 - ZOHO TICKET ID SHOULD BE STORED IN SAP IN A Z-TABLE IN ORDER TO BRING ZOHO ID IN DROP",assignedTo:"Santosh",status:"On Hold with Business",start:"2026-02-07",end:"2026-06-19",phases:["2026-05-30","2026-02-07","2026-02-09","2026-06-05","2026-06-10","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0089 - WHILE CREATING CUSTOMER INVOICE: PREVIOUS VENDOR INVOICE PRICE SHOULD APPEAR TO THE I",assignedTo:"Santosh",status:"In Review (BA)",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-05-08","2026-02-09","2026-05-25","2026-06-10","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0185 - ATTACHMENTS NEEDS TO CARRY FORWARD TO INVOICE",assignedTo:"Santosh",status:"In Review (BA)",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-02-07","2026-02-09","2026-06-05","2026-06-10","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0212 - REPORT FOR PROCUREMENT COST AND SALES PRICE IN ONE SCREEN",assignedTo:"",status:"Moved to Standard",start:"2026-01-30",end:"2026-02-25",phases:["2026-01-30","2026-02-07","2026-02-09","2026-02-10","2026-02-10","2026-02-10","2026-02-25"]},
+  {category:"Enhance",name:"NEP-SCM-0070 - PRICING ROUTINES FOR LANDED PURCHASE COST IN CUSTOMER INVOICE",assignedTo:"Santosh",status:"FS Approved",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-22","2026-05-29","2026-06-05","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0188 - VENDOR QUOTATED PRICE SHOULD ALWAYS BE LESS THAN THE CUSTOMER SELLING PRICE (ENHANCEM",assignedTo:"Prasanth",status:"In Review (BA)",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-25","2026-06-10","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0225 - PAYMENT BALANCE CHECK WITH CUSTOMER AT THE TIME INQUIRY  CREATION -  SAMUDHRA",assignedTo:"Santosh",status:"FS Approved",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-08","2026-05-15","2026-05-22","2026-06-05"]},
+  {category:"Enhance",name:"NEP-SCM-0540 - SBMC AND AMC CERTIFICATE SHOULD GENERATION ALONG WITH QR CODE AND SEQUENCE NUMBER",assignedTo:"Santosh",status:"FS Approved",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-08","2026-05-15","2026-05-22","2026-06-05"]},
+  {category:"Enhance",name:"NEP-SCM-0147 - CV ATTACHMENT DURING SALES QUOTATION",assignedTo:"",status:"FUT Completed",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-02-07","2026-02-09","2026-02-09","2026-02-12","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0468 - UPLOAD PROGRAM FOR SALES INQUIRY",assignedTo:"Santosh",status:"FS Approved",start:"2026-01-30",end:"2026-06-05",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-08","2026-05-15","2026-05-22","2026-06-05"]},
+  {category:"Enhance",name:"NEP-SCM-0226 - PICTURE ATTACHMENT AGAINST THE MATERIAL MASTER - MARINE MECHANICS",assignedTo:"Santosh",status:"FS Approved",start:"2026-01-30",end:"2026-06-12",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-15","2026-05-22","2026-05-29","2026-06-12"]},
+  {category:"Enhance",name:"NEP-SCM-0088 - INVOICE NUMBER SHOULD BE UNIQUE - ALPHANUMERIC & INCLUDE THE ENTITY NAME",assignedTo:"Santosh",status:"FS Approved",start:"2026-01-30",end:"2026-06-12",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-15","2026-05-22","2026-05-29","2026-06-12"]},
+  {category:"Enhance",name:"NEP-SCM-0033 - UNIQUE INDENTIFIACTION NUMBER OF ASSETS(ASSET CODE) - CAPTURING IN GOODS RECEIPT",assignedTo:"Ravi Kumar",status:"On Hold With Functional",start:"2026-01-30",end:"2026-06-19",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-22","2026-06-05","2026-06-12","2026-06-19"]},
+  {category:"Enhance",name:"NEP-SCM-0044 - Contract Expiry alerts in advance to customer.",assignedTo:"Santosh",status:"Dev In Progress",start:"2026-01-30",end:"2026-06-12",phases:["2026-01-30","2026-02-07","2026-02-09","2026-05-15","2026-05-22","2026-05-29","2026-06-12"]},
+  {category:"Enhance",name:"NEP-SCM-0515 - MAINTAINANCE WORKSHOP FOR US MARINE WORKS AND CHEMICALS",assignedTo:"",status:"FUT Completed",start:"2026-01-30",end:"2026-02-25",phases:["2026-01-30","2026-02-07","2026-02-09","2026-02-11",null,null,"2026-02-25"]},
+  {category:"Enhance",name:"NEP-SCM-0028 - SMARTSHEET INFORMATION HAS TO BE ACCOMODATED IN THE TO BE SYSTEM",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0221 - A TRANSACTION FOR QR CODE CREATION OF MATERIAL CODE",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0486 - CUSTOM FIELDS IN SALES INQUIRY (SAP GUI): VESSEL NAME, ZOHO DESK NUMBER, FINAL RECEIV",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0488 - CUSTOM FIELDS IN PURCHASE REQUISITION (SAP GUI)",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0083 - CUSTOM FIELDS IN RFQ (CONVERTED)",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0501 - CHECK AVAILABILITY OF STOCK DURING SALES INQUIRY CREATION AND AUTO TRIGGER PURCHASE R",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0143 - CAPTAIN DETAILS SHOULD BE AVAILABLE IN THE F4 SEARCH OPTION FOR TRANSACTION SCREEN.",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0503 - VALIDITY PERIOD OF SALES INQUIRY SHOULD BE COPIED INTO PURCHASE REQUISITION, CREATED",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0127 - CONVERTED TO  COPY CUSTOM FIELDS FROM SALES INQUIRY TO SALES QUOTATION",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0128 - CONVERTED TO COPY CUSTOM FIELDS FROM SALES QUOTATION TO SALES ORDER",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0129 - CONVERTED TO COPY CUSTOM FIELDS FROM SALES INQUIRY/PR -> RFQ",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0130 - CONVERTED TO COPY CUSTOM FIELDS FROM PR/RFQ/CONTRACT -> PO",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0131 - CONVERTED TO COPY CUSTOM FIELDS FROM PR/RFQ -> CONTRACT",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0132 - CONVERTED TO DISPLAY OF LAST SALES PRICE IN SALES ORDER",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0148 - INQUIRY NUMBER SHOULD BE TAGGED FOR SUBSEQUENT DOCUMENTS TILL VENDOR AND CUSTOMER INV",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0115 - CUSTOM FIELDS IN SALES CONTRACT (SAP GUI): VESSEL NAME, ZOHO DESK NUMBER, FINAL RECEI",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0096 - CUSTOM FIELDS IN SALES QUOTATION (SAP GUI): VESSEL NAME, ZOHO DESK NUMBER, FINAL RECE",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0094 - CUSTOM FIELDS FOR SALES INVOICE (SAP GUI ): VESSEL NAME, ZOHO DESK NUMBER, FINAL RECE",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0091 - DISPLAY OF LAST SALES PRICE IN SALES QUOTATION WITH THE COMBINATION OF CUSTOMER AND M",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0090 - DUPLICATE ORDER CHECK (CREW MEMBER & VESSEL NAME HAVE ALREADY SALES ORDER, WARING MES",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0082 - CUSTOM FIELDS IN SALES ORDER (SAP GUI): VESSEL NAME, ZOHO DESK NUMBER, FINAL RECEIVIN",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"Enhance",name:"NEP-SCM-0186 - CREATE SALES ORDER ITEMS USING QR CODES (IN HERCULES THERE SHOULD BE AN OPTION OF BAR",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FIORI",name:"NEP-SCM-0482 - RFQ TO SALES QUOTATION LINE ITEMS SHOULD BE COPIED",assignedTo:"Santosh",status:"In Review (BA)",start:"2026-02-02",end:"2026-06-08",phases:["2026-02-02","2026-02-05","2026-02-09","2026-04-30","2026-05-08","2026-05-15","2026-06-08"]},
+  {category:"FIORI",name:"NEP-SCM-0144 - INTERACTIVE STATUS DASHBOARD FOR SCM",assignedTo:"Ravi Kumar",status:"Dev In Progress",start:"2026-02-02",end:"2026-06-12",phases:["2026-02-02","2026-02-05","2026-02-09","2026-05-15","2026-05-29","2026-06-03","2026-06-12"]},
+  {category:"FIORI",name:"NEP-SCM-0224 - UPLOAD PROGRAM FOR VENDOR QUOTATION ALONG WITH CONDITION VALUES",assignedTo:"Prasanth",status:"FS Approved",start:"2026-02-02",end:"2026-06-08",phases:["2026-02-02","2026-02-05","2026-02-09","2026-05-08","2026-05-15","2026-05-22","2026-06-08"]},
+  {category:"FIORI",name:"NEP-SCM-0534 - OPTION TO CANCEL THE ASSOCIATED QUOTATIONS, RFQ AND PR FROM THE SALES QUOTATION OR FR",assignedTo:"Santosh",status:"Dev In Progress",start:"2026-02-02",end:"2026-06-08",phases:["2026-02-02","2026-02-05","2026-02-09","2026-05-22","2026-05-29","2026-06-02","2026-06-08"]},
+  {category:"FIORI",name:"NEP-SCM-0492 - IN FIORI AT THE TIME RFQ VENDOR SERCH VENDOR LIST SHOULD BE SORTED BY REGION BY OF TH",assignedTo:"Prasanth",status:"FS Approved",start:"2026-02-02",end:"2026-06-08",phases:["2026-02-02","2026-02-05","2026-02-09","2026-05-29","2026-05-29","2026-06-01","2026-06-08"]},
+  {category:"FORM",name:"NEP-SCM-0275 - SERVICE ENTRY SHEET PRINTOUT - COMMON LAYOUT ACROSS THE BUSINESS",assignedTo:"Prasanth",status:"On Hold with Business",start:"2026-02-04",end:"2026-05-29",phases:["2026-02-04","2026-02-09","2026-04-27","2026-05-04","2026-05-12","2026-05-22","2026-05-29"]},
+  {category:"FORM",name:"NEP-SCM-0263 - PURCHASE CONTRACT PRINTOUT  -  IT\u00a0 & ADMIN RELATED PROCUREMENT",assignedTo:"Prasanth",status:"Dev In Progress",start:"2026-02-04",end:"2026-05-29",phases:["2026-02-04","2026-02-09","2026-04-27","2026-05-04","2026-05-12","2026-05-22","2026-05-29"]},
+  {category:"FORM",name:"NEP-SCM-0149 - NAVCOM CERTIFICATE PRINTOUT (SALES INVOICE)",assignedTo:"Santosh",status:"Dev Scheduled",start:"2026-02-04",end:"2026-05-29",phases:["2026-02-04","2026-02-09","2026-04-27","2026-05-04","2026-05-12","2026-05-22","2026-05-29"]},
+  {category:"FORM",name:"NEP-SCM-0518 - STO (STOCK TRANSFER ORDER) PRINTOUT",assignedTo:"Prasanth",status:"FUT In Progress",start:"2026-02-04",end:"2026-05-22",phases:["2026-02-04","2026-02-09","2026-02-11","2026-02-12","2026-05-13","2026-05-18","2026-05-22"]},
+  {category:"FORM",name:"NEP-SCM-0536 - PILOT LADDER",assignedTo:"Ravi Kumar",status:"FUT In Progress",start:"2026-02-04",end:"2026-05-22",phases:["2026-02-04","2026-02-09","2026-02-11","2026-02-12","2026-05-13","2026-05-18","2026-05-22"]},
+  {category:"FORM",name:"NEP-SCM-0289 - GOODS RECEIPT PRINTOUT -  COMMON LAYOUT ACROSS BUSINESS",assignedTo:"Prasanth",status:"FUT In Progress",start:"2026-02-04",end:"2026-05-22",phases:["2026-02-04","2026-02-09","2026-02-11","2026-02-12","2026-05-13","2026-05-18","2026-05-22"]},
+  {category:"FORM",name:"NEP-SCM-9905 - GOODS RECEIPT PRINTOUT - INDIVIDUAL",assignedTo:"Prasanth",status:"FUT In Progress",start:"2026-02-04",end:"2026-05-22",phases:["2026-02-04","2026-02-09","2026-02-11","2026-02-12","2026-05-13","2026-05-18","2026-05-22"]},
+  {category:"FORM",name:"NEP-SCM-0456 - SALES DEBIT NOTE PRINTOUT - SAMUDRA MACMARINE",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0436 - SALES CREDIT NOTE PRINTOUT - HERCULES",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0419 - SALES CONTACT PRINTOUT - AZOLLA",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0056 - QR CODE GENERATION TO CHECK THE PRODUCT INFORMATION",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0238 - PURCHASE ORDER PRINTOUT  -  SAMUDRA TUBOMOT",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0251 - REQUEST FOR QUOTATION PRINTOUT - MARINE MECHANICS",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0305 - PHYSICAL INVENTORY PRINTOUT - COMMON LAYOUT ACROSS BUSINESS",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0312 - SALES INQUIRY PRINTOUT",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0335 - SALES QUOTATION PRINTOUT - SAMUDRA TUBOMOT",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0342 - SALES ORDER PRINTOUT - TURBOMOT",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0357 - DELIVERY NOTE PRINTOUT - COMMON",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0372 - PICK LIST PRINTOUT - COMMON",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0396 - PROFORMA INVOICE PRINTOUT - SAMUDRA MACMARINE",assignedTo:"",status:"FUT Completed",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"FORM",name:"NEP-SCM-0407 - SALES INVOICE PRINTOUT - GCS",assignedTo:"",status:"FUT Completed",start:"2026-02-04",end:"2026-03-02",phases:["2026-02-04","2026-02-09","2026-02-11","2026-02-12",null,null,"2026-03-02"]},
+  {category:"REPORT",name:"NEP-SCM-0102 - REPORT FOR ADDITIONAL FIELDS SHOULD BE INCORPORATED IN SO: VESSEL NAME, ZOHO DESK NUM",assignedTo:"",status:"Moved to Standard",start:"2026-02-06",end:"2026-03-05",phases:["2026-02-06","2026-02-12","2026-02-16","2026-02-18","2026-02-19","2026-02-19","2026-03-05"]},
+  {category:"REPORT",name:"NEP-SCM-0101 - REPORT FOR ADDITIONAL FIELDS SHOULD BE INCORPORATED IN PO\n\nVESSEL NAME \nINQUIRY NUMBE",assignedTo:"",status:"Moved to Standard",start:"2026-02-06",end:"2026-03-05",phases:["2026-02-06","2026-02-12","2026-02-16","2026-02-18","2026-02-19","2026-02-19","2026-03-05"]},
+  {category:"REPORT",name:"NEP-SCM-0202 - OTIF (ORDER CONFIRMED DATE VS. DELIVERY DATE VS. GR DATE) AND OTD (DELIVERY DATE VS.",assignedTo:"",status:"Moved to Standard",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"REPORT",name:"NEP-SCM-0213 - REJECTED QUOTATION LIST",assignedTo:"",status:"Moved to Standard",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"REPORT",name:"NEP-SCM-0229 - CONSUMPTION HISTORY OF A MATERIAL",assignedTo:"Ravi Kumar",status:"FS In Progress",start:"2026-04-20",end:"2026-05-20",phases:["2026-04-20","2026-04-22","2026-04-24","2026-04-30","2026-05-12","2026-05-15","2026-05-20"]},
+  {category:"REPORT",name:"NEP-SCM-0029 - ASSET EXPIRY NOTIFICATION MUST TRIGGERED IN ADVANCE TO RESPECTIVE BUSINESS USER",assignedTo:"",status:"Moved to Standard",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"REPORT",name:"NEP-SCM-0027 - END TO END REPORT TO TRACK SALES COST AGAINST PURCHASE COST",assignedTo:"",status:"Moved to Standard",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"REPORT",name:"NEP-SCM-0026 - REPORT FOR ASSET LIFECYCLE (END TO END) WITH BELOW DETAILS\n\nASSET NAME / STATE (IN ST",assignedTo:"Ravi Kumar",status:"FS In Progress",start:"2026-04-20",end:"2026-05-22",phases:["2026-04-20","2026-04-22","2026-04-24","2026-05-05","2026-05-14","2026-05-19","2026-05-22"]},
+  {category:"REPORT",name:"NEP-SCM-0025 - REPORT FOR PURCHASE DONE FOR THE PROCUREMENT VENDOR WISE AND MATERIAL WISE",assignedTo:"",status:"Moved to Standard",start:"",end:"",phases:[null,null,null,null,null,null,null]},
+  {category:"REPORT",name:"NEP-SCM-0477 - REPORT TO FETCH WARRANTY DETAILS",assignedTo:"Prasanth",status:"FS Re-Work",start:"2026-04-20",end:"2026-05-20",phases:["2026-04-20","2026-04-22","2026-04-24","2026-04-30","2026-05-12","2026-05-15","2026-05-20"]},
+  {category:"REPORT",name:"NEP-SCM-0035 - REPORT FOR STOCK AVAILABILITY WITH BELOW DETAILS INDIA/USA/UAE/STS - ITEM DESCRIPTION",assignedTo:"",status:"Moved to Standard",start:"2026-02-06",end:"2026-03-05",phases:["2026-02-06","2026-02-12","2026-02-16","2026-02-18","2026-02-19","2026-02-19","2026-03-05"]},
+  {category:"REPORT",name:"NEP-SCM-0223 - PROFITABILITY REPORT WILL HAVE BUYING (HIGHEST IF BATCH MANAGED) AND SELLING PRICE TO",assignedTo:"Santosh",status:"Dev In Progress",start:"2026-04-20",end:"2026-05-22",phases:["2026-04-20","2026-04-22","2026-04-24","2026-05-05","2026-05-14","2026-05-19","2026-05-22"]},
+  {category:"REPORT",name:"NEP-SCM-0017 - STOCK BALANCE CHECKING IN WAREHOUSE/PLANT WITH SPARE PARTS DETAILS.",assignedTo:"",status:"Moved to Standard",start:"2026-02-06",end:"2026-03-05",phases:["2026-02-06","2026-02-12","2026-02-16","2026-02-18",null,null,"2026-03-05"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0114 - SALES CONTRACT WORKFLOW",assignedTo:"Santosh",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-04",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-20","2026-04-23","2026-04-27","2026-05-04"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0099 - SALES ORDER WORKFLOW",assignedTo:"Santosh",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-04",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-20","2026-04-23","2026-04-27","2026-05-04"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0045 - SALES QUOTATION WORKFLOW",assignedTo:"Santosh",status:"In Review (BA)",start:"2026-02-19",end:"2026-05-04",phases:["2026-02-19","2026-02-19","2026-02-27","2026-04-20","2026-04-23","2026-04-27","2026-05-04"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0043 - PURCHASE CONTRACT WORKFLOW",assignedTo:"Prasanth",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-06",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-21","2026-04-27","2026-04-29","2026-05-06"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0041 - PURCHASE RFQ WORKFLOW",assignedTo:"Prasanth",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-06",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-21","2026-04-27","2026-04-29","2026-05-06"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0040 - PURCHASE REQUISITION - WORKFLOW",assignedTo:"Prasanth",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-06",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-21","2026-04-27","2026-04-29","2026-05-06"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0039 - PURCHASE ORDER WORKFLOW",assignedTo:"Prasanth",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-06",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-21","2026-04-27","2026-04-29","2026-05-06"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0470 - CREDIT NOTE REQUEST WORKFLOW",assignedTo:"Santosh",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-08",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-22","2026-04-30","2026-05-05","2026-05-08"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0471 - DEBIT NOTE REQUEST WORKFLOW",assignedTo:"Santosh",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-08",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-22","2026-04-30","2026-05-05","2026-05-08"]},
+  {category:"WORK FLOW",name:"NEP-SCM-0530 - SERVICE ENTRY SHEET WORKFLOW",assignedTo:"Prasanth",status:"On Hold with Business",start:"2026-02-17",end:"2026-05-08",phases:["2026-02-17","2026-02-17","2026-02-20","2026-04-22","2026-04-30","2026-05-05","2026-05-08"]}
+];
+
+let currentPlan='int';
+let INT_DATA=JSON.parse(localStorage.getItem('r2_int_data')||'null')||INT_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
+let SCM_DATA=JSON.parse(localStorage.getItem('r2_scm_data')||'null')||SCM_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));
+INT_DATA.forEach(r=>{if(!r.phaseDone)r.phaseDone=Array(7).fill(null);while(r.phaseDone.length<7)r.phaseDone.push(null);});
+SCM_DATA.forEach(r=>{if(!r.phaseDone)r.phaseDone=Array(7).fill(null);while(r.phaseDone.length<7)r.phaseDone.push(null);});
+
+function DATA(){return currentPlan==='int'?INT_DATA:SCM_DATA;}
+function PHASE_NAMES(){return currentPlan==='int'?INT_PHASE_NAMES:SCM_PHASE_NAMES;}
+function PHASE_SHORT(){return currentPlan==='int'?INT_PHASE_SHORT:SCM_PHASE_SHORT;}
+function groupKey(){return currentPlan==='int'?'system':'category';}
+function col3Key(){return currentPlan==='int'?'flow':'assignedTo';}
+function persist(){
+  try{
+    if(currentPlan==='int')localStorage.setItem('r2_int_data',JSON.stringify(INT_DATA));
+    else localStorage.setItem('r2_scm_data',JSON.stringify(SCM_DATA));
+  }catch(e){}
+}
+function getGroups(){return[...new Set(DATA().map(r=>r[groupKey()]))].sort();}
+
+
+(function(){
+  const canvas=document.getElementById('particleCanvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,particles=[],mouse={x:-999,y:-999};
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+  const PCOLS=['#3b82f6','#059669','#ea580c','#7c3aed','#d97706'];
+  function mkP(){return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*1.5+.5,c:PCOLS[Math.floor(Math.random()*PCOLS.length)]};}
+  for(let i=0;i<70;i++)particles.push(mkP());
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      const dx=p.x-mouse.x,dy=p.y-mouse.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<100){p.vx+=dx/d*.03;p.vy+=dy/d*.03;}
+      p.vx*=.995;p.vy*=.995;p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c+'88';ctx.fill();
+    });
+    for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<100){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle='rgba(59,130,246,'+(1-d/100)*.14+')';ctx.lineWidth=.5;ctx.stroke();}
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ════════════ PLAN SWITCH ════════════════════════════ */
+function switchPlan(plan){
+  currentPlan=plan;
+  document.getElementById('ptab-int').className='plan-btn'+(plan==='int'?' active-int':'');
+  document.getElementById('ptab-scm').className='plan-btn'+(plan==='scm'?' active-scm':'');
+  document.getElementById('chart-sys-title').textContent=plan==='int'?'Integrations by system':'WRICEFs by category';
+  document.getElementById('gantt-title').textContent=plan==='int'?'Timeline — system delivery windows':'Timeline — category delivery windows';
+  document.getElementById('table-title').textContent=plan==='int'?'All integrations':'All WRICEFs';
+  document.getElementById('th-group').textContent=plan==='int'?'System':'Category';
+  document.getElementById('th-col3').textContent=plan==='int'?'Flow':'Assigned To';
+  document.getElementById('eh-group').textContent=plan==='int'?'System':'Category';
+  document.getElementById('eh-col3').textContent=plan==='int'?'Flow':'Assigned To';
+  if(cSys){cSys.destroy();cSys=null;}
+  if(cCompletion){cCompletion.destroy();cCompletion=null;}
+  if(cStatus){cStatus.destroy();cStatus=null;}
+  if(cPlanned){cPlanned.destroy();cPlanned=null;}
+  const phr=document.getElementById('phase-header-row');
+  while(phr.children.length>7)phr.removeChild(phr.lastChild);
+  sortKey=plan==='int'?'system':'category';sortDir=1;
+  document.querySelectorAll('.head-main th').forEach(t=>t.classList.remove('sort-active'));
+  document.querySelector('.logo').style.background=plan==='int'?'linear-gradient(135deg,#3b82f6,#7c3aed)':'linear-gradient(135deg,#7c3aed,#059669)';
+  phasesOpen=false;
+  const tbl=document.querySelector('#view-dashboard table');tbl.classList.remove('phases-open');
+  const btn=document.getElementById('phaseToggleBtn');btn.classList.remove('active');
+  btn.querySelector('span').textContent='📅 Show phases';
+  document.getElementById('phaseKey').classList.add('hidden');
+  refreshDashboard();
+  if(document.getElementById('view-editor').classList.contains('active'))renderEditor();
+  syncImportLabels();
+  clearXlPreview();
+}
+
+/* ════════════ RIPPLE ═════════════════════════════════ */
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('.btn');if(!btn)return;
+  const r=document.createElement('span');r.className='ripple-wave';
+  const rect=btn.getBoundingClientRect();const size=Math.max(rect.width,rect.height)*2;
+  r.style.cssText='width:'+size+'px;height:'+size+'px;left:'+(e.clientX-rect.left-size/2)+'px;top:'+(e.clientY-rect.top-size/2)+'px';
+  btn.appendChild(r);setTimeout(()=>r.remove(),560);
+});
+
+/* ════════════ POPUP ══════════════════════════════════ */
+const popup=document.getElementById('popup');
+let popupTimer=null,hideTimer=null;
+function showPopup(html,anchor){
+  clearTimeout(hideTimer);popup.innerHTML=html;popup.style.display='block';
+  popup.classList.remove('hiding');popup.style.animation='none';popup.offsetHeight;popup.style.animation='';
+  const rect=anchor.getBoundingClientRect();const pw=260,ph=200;
+  let left=rect.left+rect.width/2-pw/2,top=rect.top-ph-10+window.scrollY;
+  if(left<8)left=8;if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  if(top<8+window.scrollY)top=rect.bottom+10+window.scrollY;
+  popup.style.left=left+'px';popup.style.top=top+'px';
+}
+function hidePopup(){popup.classList.add('hiding');hideTimer=setTimeout(()=>{popup.style.display='none';popup.classList.remove('hiding');},140);}
+function scheduleHide(){popupTimer=setTimeout(hidePopup,180);}
+function cancelHide(){clearTimeout(popupTimer);}
+popup.addEventListener('mouseenter',cancelHide);popup.addEventListener('mouseleave',scheduleHide);
+
+/* ════════════ COUNTER ════════════════════════════════ */
+function animateCount(el,target,dur){
+  dur=dur||900;if(typeof target!=='number'){el.textContent=target;return;}
+  const start=performance.now();
+  function step(now){const p=Math.min((now-start)/dur,1);const ease=1-Math.pow(1-p,3);el.textContent=Math.round(target*ease);if(p<1)requestAnimationFrame(step);else el.textContent=target;}
+  requestAnimationFrame(step);
+}
+
+/* ════════════ VIEW TRANSITIONS ═══════════════════════ */
+const VIEWS=['dashboard','editor','import'];
+let currentView='dashboard';
+function switchView(v,el){
+  if(v===currentView)return;
+  const oldIdx=VIEWS.indexOf(currentView),newIdx=VIEWS.indexOf(v);
+  const old=document.getElementById('view-'+currentView),neu=document.getElementById('view-'+v);
+  old.style.animation=oldIdx<newIdx?'slideOutL .25s ease forwards':'slideOutR .25s ease forwards';
+  setTimeout(()=>{old.classList.remove('active');old.style.animation='';neu.classList.add('active');
+    neu.classList.add(newIdx>oldIdx?'entering-r':'entering-l');setTimeout(()=>neu.classList.remove('entering-r','entering-l'),320);},220);
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  currentView=v;
+  if(v==='dashboard')refreshDashboard();
+  if(v==='editor')renderEditor();
+}
+
+/* ════════════ TOAST ══════════════════════════════════ */
+const ICONS_MAP={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+function toast(msg,type){
+  type=type||'info';
+  const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toastIcon').textContent=ICONS_MAP[type]||'ℹ️';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ════════════ MODAL ══════════════════════════════════ */
+let editIdx=-1;
+function openAddModal(){
+  editIdx=-1;document.getElementById('modalTitle').textContent='Add item';
+  document.getElementById('fld-group').value='';document.getElementById('fld-name').value='';
+  document.getElementById('fld-col3').value='';document.getElementById('fld-status').value='';
+  document.getElementById('fld-start').value='';document.getElementById('fld-end').value='';
+  document.getElementById('fld-group-lbl').textContent=currentPlan==='int'?'System':'Category';
+  document.getElementById('fld-col3-lbl').textContent=currentPlan==='int'?'Flow':'Assigned To';
+  buildPhasesForm(Array(7).fill(null),Array(7).fill(null));
+  document.getElementById('grp-dl').innerHTML=getGroups().map(s=>'<option value="'+s+'">').join('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function openEditModal(i){
+  editIdx=i;const r=DATA()[i];
+  document.getElementById('modalTitle').textContent='Edit item';
+  document.getElementById('fld-group').value=r[groupKey()]||'';
+  document.getElementById('fld-name').value=r.name;
+  document.getElementById('fld-col3').value=r[col3Key()]||'';
+  const fldSt=document.getElementById('fld-status');
+  if(r.status&&!STATUS_LIST.includes(r.status)){
+    const opt=document.createElement('option');opt.value=r.status;opt.textContent=r.status;
+    fldSt.insertBefore(opt,fldSt.options[1]);
+  }
+  fldSt.value=r.status;
+  document.getElementById('fld-start').value=r.start;
+  document.getElementById('fld-end').value=r.end;
+  document.getElementById('fld-group-lbl').textContent=currentPlan==='int'?'System':'Category';
+  document.getElementById('fld-col3-lbl').textContent=currentPlan==='int'?'Flow':'Assigned To';
+  buildPhasesForm(r.phases||[],r.phaseDone||[]);
+  document.getElementById('grp-dl').innerHTML=getGroups().map(s=>'<option value="'+s+'">').join('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+function buildPhasesForm(ph,pd){
+  pd=pd||Array(7).fill(null);
+  document.getElementById('phasesGrid').innerHTML=PHASE_NAMES().map(function(n,i){
+    return '<div class="form-group"><label class="form-label">'+n+'</label>'+
+      '<input class="form-input" type="date" id="ph-'+i+'" value="'+(ph[i]||'')+'"/>'+
+      '<div style="display:flex;gap:10px;margin-top:5px;font-size:11px">'+
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#059669"><input type="radio" name="pd-'+i+'" value="true" '+(pd[i]===true?'checked':'')+' style="accent-color:#059669"/> ✓ Done</label>'+
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#dc2626"><input type="radio" name="pd-'+i+'" value="false" '+(pd[i]===false?'checked':'')+' style="accent-color:#dc2626"/> ✗ Overdue</label>'+
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#8a99b0"><input type="radio" name="pd-'+i+'" value="null" '+(pd[i]===null?'checked':'')+'/> Auto</label>'+
+      '</div></div>';
+  }).join('');
+}
+function saveModal(){
+  const grp=document.getElementById('fld-group').value.trim(),name=document.getElementById('fld-name').value.trim();
+  if(!grp||!name){toast('Group and name are required.','error');return;}
+  const phases=PHASE_NAMES().map(function(_,i){return document.getElementById('ph-'+i).value||null;});
+  const phaseDone=PHASE_NAMES().map(function(_,i){const v=document.querySelector('input[name="pd-'+i+'"]:checked');return v?v.value==='true'?true:v.value==='false'?false:null:null;});
+  const row={name:name,status:document.getElementById('fld-status').value,start:document.getElementById('fld-start').value,end:document.getElementById('fld-end').value,phases:phases,phaseDone:phaseDone};
+  row[groupKey()]=grp;row[col3Key()]=document.getElementById('fld-col3').value.trim();
+  if(editIdx>=0)DATA()[editIdx]=row;else DATA().push(row);
+  persist();closeModal();refreshAll();toast(editIdx>=0?'Updated.':'Added.','success');
+}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+function deleteRow(i){if(!confirm('Delete "'+DATA()[i].name+'"?'))return;DATA().splice(i,1);persist();refreshAll();toast('Deleted.','warn');}
+
+/* ════════════ KPI POPUP ══════════════════════════════ */
+function showKpiPopup(id,color){
+  const D=DATA(),gk=groupKey();
+  const groups=[...new Set(D.map(r=>r[gk]))].sort();
+  const cnt={};D.forEach(r=>{cnt[r[gk]]=(cnt[r[gk]]||0)+1;});
+  const statCnt={};D.forEach(r=>{statCnt[r.status]=(statCnt[r.status]||0)+1;});
+  const done=D.reduce((a,r)=>a+(r.phaseDone||[]).filter(d=>d===true).length,0);
+  const total7=D.length*7;
+  const pops={
+    kpi0:'<div class="popup-title" style="color:'+color+'">Breakdown</div>'+
+      groups.slice(0,8).map(g=>'<div class="popup-row"><span style="font-size:11px;color:var(--text2)">'+g+'</span><span class="popup-val" style="color:'+sc(g)+'">'+cnt[g]+'</span></div>').join(''),
+    kpi1:'<div class="popup-title" style="color:'+color+'">Status breakdown</div>'+
+      Object.entries(statCnt).slice(0,8).map(function(e){return '<div class="popup-row"><span style="font-size:11px;color:var(--text2)">'+e[0]+'</span><span class="popup-val">'+e[1]+'</span></div>';}).join(''),
+    kpi2:'<div class="popup-title" style="color:'+color+'">Phases completed</div>'+
+      '<div class="popup-row"><span class="popup-label">Done</span><span class="popup-val" style="color:#059669">'+done+'</span></div>'+
+      '<div class="popup-row"><span class="popup-label">Total phases</span><span class="popup-val">'+total7+'</span></div>'+
+      '<div class="popup-bar-wrap" style="margin-top:8px"><div class="popup-bar" style="width:'+Math.round(done/total7*100)+'%;background:#059669"></div></div>',
+    kpi3:'<div class="popup-title" style="color:'+color+'">Timeline</div>'+
+      '<div class="popup-row"><span class="popup-label">Earliest start</span><span class="popup-val">'+( D.map(r=>r.start).filter(Boolean).sort()[0]||'—')+'</span></div>'+
+      '<div class="popup-row"><span class="popup-label">Latest end</span><span class="popup-val">'+( D.map(r=>r.end).filter(Boolean).sort().reverse()[0]||'—')+'</span></div>',
+  };
+  const el=document.getElementById(id);if(el)showPopup(pops[id]||'',el);
+}
+
+/* ════════════ KPIs ═══════════════════════════════════ */
+function buildKPIs(){
+  const D=DATA(),gk=groupKey();
+  const groups=new Set(D.map(r=>r[gk])).size;
+  const statuses=[...new Set(D.map(r=>r.status))];
+  const done=D.reduce((a,r)=>a+(r.phaseDone||[]).filter(d=>d===true).length,0);
+  const total7=D.length*7;const pct=total7>0?Math.round(done/total7*100):0;
+  const latest=D.map(r=>r.end).filter(Boolean).sort().reverse()[0]||'—';
+  const label0=currentPlan==='int'?'Total integrations':'Total WRICEFs';
+  const label1=currentPlan==='int'?'Systems':'Categories';
+  const kpis=[
+    {v:D.length,l:label0,s:'in this plan',c:'#3b82f6',icon:'🔗',id:'kpi0'},
+    {v:groups,l:label1,s:statuses.length+' statuses',c:'#7c3aed',icon:'⚡',id:'kpi1'},
+    {v:pct+'%',l:'Phase completion',s:done+' / '+total7+' phases',c:'#059669',icon:'📊',id:'kpi2'},
+    {v:latest,l:'Latest end date',s:'project completion',c:'#d97706',icon:'📅',id:'kpi3'},
+  ];
+  document.getElementById('kpis').innerHTML=kpis.map(k=>
+    '<div class="kpi" style="--kpi-c:'+k.c+'" id="'+k.id+'" onclick="showKpiPopup(\''+k.id+'\',\''+k.c+'\')">'+
+    '<div class="kpi-glow"></div><div class="kpi-stripe"></div>'+
+    '<div class="kpi-icon">'+k.icon+'</div>'+
+    '<div class="kpi-val" id="'+k.id+'-val">'+(typeof k.v==='number'?0:k.v)+'</div>'+
+    '<div class="kpi-label">'+k.l+'</div><div class="kpi-sub">'+k.s+'</div></div>'
+  ).join('');
+  kpis.forEach(k=>{if(typeof k.v==='number')animateCount(document.getElementById(k.id+'-val'),k.v);});
+}
+
+/* ════════════ CHARTS ═════════════════════════════════ */
+let cSys=null,cCompletion=null,cStatus=null,cPlanned=null;
+function buildCharts(){
+  const D=DATA(),gk=groupKey();
+  const cnt={};D.forEach(r=>{cnt[r[gk]]=(cnt[r[gk]]||0)+1;sc(r[gk]);});
+  const sl=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]),sv=sl.map(s=>cnt[s]),bg=sl.map(s=>sc(s));
+  document.getElementById('legend-sys').innerHTML=sl.map(s=>'<div class="legend-item"><span class="legend-dot" style="background:'+sc(s)+'"></span>'+s+' ('+cnt[s]+')</div>').join('');
+  const axO={ticks:{color:'#8a99b0',font:{size:10}},grid:{color:'rgba(30,41,59,.05)'},border:{display:false}};
+  if(cSys){cSys.data.labels=sl;cSys.data.datasets[0].data=sv;cSys.data.datasets[0].backgroundColor=bg.map(c=>c+'bb');cSys.data.datasets[0].hoverBackgroundColor=bg;cSys.update();}
+  else cSys=new Chart(document.getElementById('chartSys'),{type:'bar',
+    data:{labels:sl,datasets:[{data:sv,backgroundColor:bg.map(c=>c+'bb'),hoverBackgroundColor:bg,borderWidth:0,borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000,easing:'easeOutQuart'},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#f4f7fb',borderColor:'rgba(30,41,59,.12)',borderWidth:1,padding:10,titleColor:'#1e293b',bodyColor:'#475569',cornerRadius:8}},
+      scales:{x:{...axO,ticks:{...axO.ticks,maxRotation:40,autoSkip:false}},y:{...axO,ticks:{...axO.ticks,stepSize:1}}}}});
+  let phDone=0,phNot=0;
+  D.forEach(r=>{(r.phases||[]).forEach((_,pi)=>{const d=(r.phaseDone||[])[pi]??null;if(d===true)phDone++;else phNot++;});});
+  const total=phDone+phNot,pct=total>0?Math.round(phDone/total*100):0;
+  document.getElementById('legend-completion').innerHTML=
+    '<div class="legend-item"><span class="legend-dot" style="background:#059669"></span>Completed ('+phDone+')</div>'+
+    '<div class="legend-item"><span class="legend-dot" style="background:#dce3ef"></span>Not completed ('+phNot+')</div>';
+  if(cCompletion){cCompletion.data.datasets[0].data=[phDone,phNot];cCompletion.options.plugins.centerText={pct:pct};cCompletion.update();}
+  else cCompletion=new Chart(document.getElementById('chartCompletion'),{type:'doughnut',
+    data:{labels:['Completed','Not completed'],datasets:[{data:[phDone,phNot],backgroundColor:['#059669cc','#dce3efcc'],hoverBackgroundColor:['#047857','#cbd5e1'],borderWidth:2,borderColor:'#f4f7fb',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000,easing:'easeOutQuart'},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#f4f7fb',borderColor:'rgba(30,41,59,.12)',borderWidth:1,padding:10,titleColor:'#1e293b',bodyColor:'#475569',cornerRadius:8,
+        callbacks:{label:function(ctx){const v=ctx.parsed;const p2=total>0?Math.round(v/total*100):0;return ' '+ctx.label+': '+v+' ('+p2+'%)'}}},centerText:{pct:pct}},cutout:'68%'},
+    plugins:[{id:'centerText',beforeDraw:function(chart){
+      const ctx2=chart.ctx,ca=chart.chartArea;
+      const p=chart.options.plugins.centerText?chart.options.plugins.centerText.pct:undefined;
+      if(p===undefined)return;
+      const cx=ca.left+ca.width/2,cy=ca.top+ca.height/2;
+      ctx2.save();ctx2.textAlign='center';ctx2.textBaseline='middle';
+      ctx2.font='bold 28px Inter,sans-serif';
+      ctx2.fillStyle=p>=70?'#059669':p>=40?'#d97706':'#dc2626';
+      ctx2.fillText(p+'%',cx,cy);ctx2.restore();
+    }}]
+  });
+  // ── Planned completion as of today ──────────────────────
+  // Phases whose planned date has passed = "should be done by now"
+  let phPlannedDue=0,phPlannedNotDue=0;
+  D.forEach(r=>{
+    (r.phases||[]).forEach(function(p,pi){
+      if(!p)return; // skip TBD phases
+      const dt=new Date(p);
+      if(dt<=today) phPlannedDue++;  // planned date passed — should be complete
+      else phPlannedNotDue++;        // still in the future — not due yet
+    });
+  });
+  const plannedTotal=phPlannedDue+phPlannedNotDue;
+  const plannedPct=plannedTotal>0?Math.round(phPlannedDue/plannedTotal*100):0;
+  document.getElementById('legend-planned').innerHTML=
+    '<div class="legend-item"><span class="legend-dot" style="background:#059669"></span>Should be done ('+phPlannedDue+')</div>'+
+    '<div class="legend-item"><span class="legend-dot" style="background:#dce3ef"></span>Not yet due ('+phPlannedNotDue+')</div>';
+  const plannedCenterPlugin=[{id:'plannedCenter',beforeDraw:function(chart){
+    const ctx2=chart.ctx,ca=chart.chartArea;
+    const p=chart.options.plugins.plannedCenter?chart.options.plugins.plannedCenter.pct:undefined;
+    if(p===undefined)return;
+    const cx=ca.left+ca.width/2,cy=ca.top+ca.height/2;
+    ctx2.save();ctx2.textAlign='center';ctx2.textBaseline='middle';
+    ctx2.font='bold 28px Inter,sans-serif';
+    ctx2.fillStyle=p>=70?'#059669':p>=40?'#d97706':'#dc2626';
+    ctx2.fillText(p+'%',cx,cy);ctx2.restore();
+  }}];
+  if(cPlanned){cPlanned.data.datasets[0].data=[phPlannedDue,phPlannedNotDue];cPlanned.options.plugins.plannedCenter={pct:plannedPct};cPlanned.update();}
+  else cPlanned=new Chart(document.getElementById('chartPlanned'),{type:'doughnut',
+    data:{labels:['Should be done by now','Not yet due'],datasets:[{data:[phPlannedDue,phPlannedNotDue],backgroundColor:['#059669cc','#dce3efcc'],hoverBackgroundColor:['#047857','#cbd5e1'],borderWidth:2,borderColor:'#f4f7fb',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000,easing:'easeOutQuart'},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#f4f7fb',borderColor:'rgba(30,41,59,.12)',borderWidth:1,padding:10,titleColor:'#1e293b',bodyColor:'#475569',cornerRadius:8,
+          callbacks:{label:function(ctx){const v=ctx.parsed;const p2=plannedTotal>0?Math.round(v/plannedTotal*100):0;return ' '+ctx.label+': '+v+' ('+p2+'%)'}}},
+        plannedCenter:{pct:plannedPct}},cutout:'68%'},
+    plugins:plannedCenterPlugin
+  });
+  const stCnt={};
+  DATA().forEach(r=>{const s=(r.status||'').trim();if(s)stCnt[s]=(stCnt[s]||0)+1;});
+  const stListLower=STATUS_LIST.map(s=>s.toLowerCase());
+  function stOrder(s){const i=stListLower.indexOf(s.toLowerCase());return i>=0?i:999;}
+  const stKeys=Object.keys(stCnt).sort((a,b)=>stOrder(a)-stOrder(b)||(a<b?-1:1));
+  const stVals=stKeys.map(s=>stCnt[s]);
+  function statusColor(s){
+    const sl=s.toLowerCase();
+    if(sl==='new'||sl==='scheduled')return'#94a3b8';
+    if(sl.includes('hold')||sl.includes('cancel')||sl.includes('pending'))return'#f97316';
+    if(sl.includes('fs')||sl.includes('in review')||sl.includes('in approval'))return'#3b82f6';
+    if(sl.includes('dev'))return'#8b5cf6';
+    if(sl.includes('tut')||sl.includes('cpi'))return'#06b6d4';
+    if(sl.includes('fut'))return'#f59e0b';
+    if(sl.includes('sit'))return'#ec4899';
+    if(sl.includes('uat'))return'#10b981';
+    if(sl.includes('bug')||sl.includes('revision')||sl.includes('rework')||sl.includes('re-work'))return'#ef4444';
+    if(sl.includes('complet')||sl.includes('standard')||sl.includes('released'))return'#059669';
+    return'#64748b';
+  }
+  const stBg=stKeys.map(s=>statusColor(s)+'cc');
+  const stHover=stKeys.map(s=>statusColor(s));
+  // Dynamic height: 32px per bar + 24px top/bottom padding
+  const BAR_H=32,PAD=24;
+  const innerH=Math.max(80, stKeys.length*BAR_H+PAD);
+  // Set canvas dimensions explicitly so Chart.js renders all bars (not clipped by scroll container)
+  const canvas=document.getElementById('chartStatus');
+  const wrap=document.getElementById('chartStatusWrap');
+  canvas.style.width='100%';
+  canvas.style.height=innerH+'px';
+  canvas.height=innerH;
+  canvas.width=wrap.clientWidth||600;
+  const hint=document.getElementById('chartScrollHint');
+  if(hint)hint.classList.toggle('visible',innerH>260);
+  document.getElementById('legend-status').innerHTML=stKeys.map(s=>
+    '<div class="legend-item"><span class="legend-dot" style="background:'+statusColor(s)+'"></span>'+s+' ('+stCnt[s]+')</div>'
+  ).join('');
+  document.getElementById('chart-status-title').textContent=
+    (currentPlan==='int'?'Integration':'WRICEF')+' items by status';
+  const maxVal=Math.max(...stVals,1);
+  const stScaleOpts={ticks:{color:'#8a99b0',font:{size:10}},grid:{color:'rgba(30,41,59,.05)'},border:{display:false}};
+  if(cStatus){cStatus.destroy();cStatus=null;}
+  cStatus=new Chart(document.getElementById('chartStatus'),{type:'bar',
+    data:{labels:stKeys,datasets:[{
+      data:stVals,backgroundColor:stBg,hoverBackgroundColor:stHover,
+      borderWidth:0,borderRadius:4,borderSkipped:false,
+      barThickness:18
+    }]},
+    options:{
+      responsive:false,maintainAspectRatio:false,
+      animation:{duration:900,easing:'easeOutQuart'},
+      indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#f4f7fb',borderColor:'rgba(30,41,59,.12)',borderWidth:1,padding:10,
+          titleColor:'#1e293b',bodyColor:'#475569',cornerRadius:8,
+          callbacks:{label:ctx=>' '+ctx.parsed.x+' item'+(ctx.parsed.x===1?'':'s')}}
+      },
+      scales:{
+        x:{ticks:{color:'#8a99b0',font:{size:10},stepSize:1,precision:0},grid:{color:'rgba(30,41,59,.05)'},border:{display:false},max:maxVal+1},
+        y:{ticks:{color:'#1e293b',font:{size:11},crossAlign:'far'},grid:{display:false},border:{display:false}}
+      }
+    }
+  });
+}
+
+/* ════════════ GANTT ══════════════════════════════════ */
+function buildGantt(){
+  const D=DATA(),gk=groupKey();
+  const dates=D.map(r=>r.start).concat(D.map(r=>r.end)).filter(Boolean).sort();
+  if(!dates.length){document.getElementById('gantt').innerHTML='<div style="color:var(--text3);font-size:12px;padding:1rem">No date data.</div>';return;}
+  const minD=new Date(dates[0]),maxD=new Date(dates[dates.length-1]);
+  minD.setDate(1);maxD.setMonth(maxD.getMonth()+1,1);
+  const total=maxD-minD;
+  const months=[];let dm=new Date(minD);
+  while(dm<maxD){months.push({l:dm.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}),d:new Date(dm)});dm=new Date(dm);dm.setMonth(dm.getMonth()+1);}
+  const bySys={};
+  D.forEach(r=>{if(!r.start||!r.end)return;if(!bySys[r[gk]])bySys[r[gk]]={s:r.start,e:r.end};else{if(r.start<bySys[r[gk]].s)bySys[r[gk]].s=r.start;if(r.end>bySys[r[gk]].e)bySys[r[gk]].e=r.end;}});
+  const sl2=Object.keys(bySys).sort((a,b)=>bySys[a].s.localeCompare(bySys[b].s));
+  const tp2=(today>=minD&&today<=maxD)?(today-minD)/total*100:-1;
+  let html='<div style="position:relative;margin-bottom:20px;height:14px"><div style="position:absolute;left:140px;right:0;top:0">';
+  months.forEach(m=>{html+='<span style="position:absolute;left:'+(m.d-minD)/total*100+'%;font-size:10px;color:var(--text3);font-family:var(--mono);white-space:nowrap">'+m.l+'</span>';});
+  html+='</div></div>';
+  sl2.forEach(function(grp,i){
+    const s=new Date(bySys[grp].s),e=new Date(bySys[grp].e);
+    const left=(s-minD)/total*100,width=(e-s)/total*100,c=sc(grp),count=D.filter(r=>r[gk]===grp).length;
+    const elapsed=Math.min(100,Math.max(0,(today-s)/(e-s)*100)),dur=Math.round((e-s)/864e5);
+    const safeGrp=grp.replace(/'/g,"\\'");
+    html+='<div class="gantt-row"><span class="gantt-label" style="color:'+c+';font-weight:600" title="'+grp+'">'+grp+'</span>'+
+      '<div class="gantt-track"><div class="gantt-bar" style="left:'+left+'%;width:'+width+'%;background:linear-gradient(90deg,'+c+'88,'+c+'dd)"'+
+      ' onmouseenter="showGanttPopup(event,\''+safeGrp+'\','+count+','+dur+','+Math.round(elapsed)+'\''+c+'\')" onmouseleave="scheduleHide()"></div>'+
+      (tp2>=0?'<div class="gantt-today" style="left:'+tp2+'%"></div>':'')+'</div>'+
+      '<span style="font-size:10px;color:'+c+';font-family:var(--mono);margin-left:10px;font-weight:700">'+count+'</span></div>';
+  });
+  if(tp2>=0)html+='<div style="display:flex;align-items:center;gap:7px;margin-top:12px;padding-left:140px;font-size:11px;color:var(--text3)"><span style="width:14px;height:2px;background:var(--red);display:inline-block;border-radius:1px"></span>Today — Apr 16, 2026</div>';
+  document.getElementById('gantt').innerHTML=html;
+}
+function showGanttPopup(e,grp,count,dur,elapsed,color){
+  cancelHide();
+  const html='<div class="popup-title" style="color:'+color+'">'+grp+'</div>'+
+    '<div class="popup-row"><span class="popup-label">Items</span><span class="popup-val" style="color:'+color+'">'+count+'</span></div>'+
+    '<div class="popup-row"><span class="popup-label">Duration</span><span class="popup-val">'+dur+' days</span></div>'+
+    '<hr class="popup-divider"><div style="font-size:11px;color:var(--text3);margin-bottom:5px">Timeline progress</div>'+
+    '<div class="popup-bar-wrap"><div class="popup-bar" style="width:'+elapsed+'%;background:'+color+'"></div></div>'+
+    '<div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right">'+elapsed+'% elapsed</div>';
+  showPopup(html,e.target);
+}
+
+/* ════════════ TABLE ══════════════════════════════════ */
+let sortKey='system',sortDir=1,phasesOpen=false;
+function togglePhases(){
+  phasesOpen=!phasesOpen;
+  const tbl=document.querySelector('#view-dashboard table');
+  const btn=document.getElementById('phaseToggleBtn');
+  tbl.classList.toggle('phases-open',phasesOpen);btn.classList.toggle('active',phasesOpen);
+  btn.querySelector('span').textContent=phasesOpen?'📅 Hide phases':'📅 Show phases';
+  document.getElementById('phaseKey').classList.toggle('hidden',!phasesOpen);
+}
+function populateFilters(){
+  const D=DATA(),gk=groupKey();
+  const fG=document.getElementById('fGroup'),sv=fG.value;
+  fG.innerHTML='<option value="">All groups</option>'+getGroups().map(s=>'<option value="'+s+'"'+(s===sv?' selected':'')+'>'+s+'</option>').join('');
+  const fS=document.getElementById('fStatus'),sv2=fS.value;
+  // Only show statuses actually assigned in the current data, in STATUS_LIST order
+  const inData=new Set(D.map(r=>r.status).filter(Boolean));
+  const active=[...STATUS_LIST.filter(s=>inData.has(s)),...[...inData].filter(s=>!STATUS_LIST.includes(s)).sort()];
+  fS.innerHTML='<option value="">All statuses</option>'+active.map(s=>'<option value="'+s+'"'+(s===sv2?' selected':'')+'>'+s+'</option>').join('');
+}
+function phaseClass(d,done){
+  if(done===true)return'ph-done';if(done===false)return'ph-overdue';
+  if(!d)return'ph-tbd';const dt=new Date(d),diff=(dt-today)/864e5;
+  if(dt<today)return'ph-pending';if(diff<=14)return'ph-soon';return'ph-future';
+}
+function phaseIcon(done){
+  if(done===true)return'<span class="phase-icon" style="color:#059669">✓</span>';
+  if(done===false)return'<span class="phase-icon" style="color:#dc2626">✗</span>';return'';
+}
+function fmtDate(d){if(!d)return'TBD';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}
+function fmtFull(d){if(!d)return'TBD';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function miniDotClass(d,done){
+  if(done===true)return'p-done';if(done===false)return'p-over';
+  if(!d)return'p-tbd';const dt=new Date(d),diff=(dt-today)/864e5;
+  if(dt<today)return'p-pend';if(diff<=14)return'p-soon';return'p-fut';
+}
+function togglePhase(ri,pi){
+  if(!DATA()[ri].phaseDone)DATA()[ri].phaseDone=Array(7).fill(null);
+  const cur=DATA()[ri].phaseDone[pi],ph=DATA()[ri].phases[pi];
+  if(!ph&&cur===null)return;
+  DATA()[ri].phaseDone[pi]=cur===null?true:cur===true?false:null;
+  persist();render();
+}
+function showPhasePopup(e,ri,pi){
+  cancelHide();
+  const r=DATA()[ri],ph=(r.phases||[])[pi],done=(r.phaseDone||[])[pi];if(done===undefined)done=null;
+  const cls=phaseClass(ph,done);
+  const stC={'ph-done':'#059669','ph-overdue':'#dc2626','ph-pending':'#d97706','ph-soon':'#ea580c','ph-future':'#8a99b0','ph-tbd':'#8a99b0'};
+  const stL={'ph-done':'✓ Completed','ph-overdue':'✗ Overdue','ph-pending':'⏳ Awaiting','ph-soon':'⚡ Due soon','ph-future':'Upcoming','ph-tbd':'TBD'};
+  const nextA=done===null?'Click to mark ✓ Done':done===true?'Click to mark ✗ Overdue':'Click to clear';
+  const html='<div class="popup-title">'+PHASE_NAMES()[pi]+'</div>'+
+    '<div style="font-size:10px;color:var(--text2);margin-bottom:8px;font-family:var(--mono);word-break:break-word">'+r.name.substring(0,55)+(r.name.length>55?'…':'')+'</div>'+
+    '<div class="popup-row"><span class="popup-label">Date</span><span class="popup-val">'+fmtFull(ph)+'</span></div>'+
+    '<div class="popup-row"><span class="popup-label">Status</span><span style="color:'+(stC[cls]||'#8a99b0')+';font-weight:600;font-size:11px">'+(stL[cls]||'—')+'</span></div>'+
+    '<hr class="popup-divider"><div class="popup-hint">'+nextA+'</div>';
+  showPopup(html,e.currentTarget);
+}
+function showAllPhasesPopup(e,ri){
+  cancelHide();
+  const r=DATA()[ri];
+  const stC={'ph-done':'#059669','ph-overdue':'#dc2626','ph-pending':'#d97706','ph-soon':'#ea580c','ph-future':'#8a99b0','ph-tbd':'#8a99b0'};
+  const stL={'ph-done':'✓ Done','ph-overdue':'✗ Overdue','ph-pending':'⏳ Awaiting','ph-soon':'⚡ Due soon','ph-future':'Upcoming','ph-tbd':'TBD'};
+  const rows=(r.phases||[]).map(function(p,pi){
+    const done2=(r.phaseDone||[])[pi];const dn=done2===undefined?null:done2;const cls=phaseClass(p,dn);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px">'+
+      '<span style="color:var(--text3);min-width:52px">'+PHASE_SHORT()[pi]+'</span>'+
+      '<span style="font-family:var(--mono);color:var(--text2)">'+fmtDate(p)+'</span>'+
+      '<span style="color:'+(stC[cls]||'#8a99b0')+';font-weight:600;font-size:10px;min-width:70px;text-align:right">'+(stL[cls]||'—')+'</span></div>';
+  }).join('');
+  const html='<div class="popup-title" style="font-size:12px;margin-bottom:8px">'+r[groupKey()]+'</div>'+
+    '<div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:10px;word-break:break-word;line-height:1.4">'+r.name.substring(0,55)+(r.name.length>55?'…':'')+'</div>'+
+    rows+'<div class="popup-hint" style="margin-top:8px">Click to expand all phase dates</div>';
+  showPopup(html,e.currentTarget);
+}
+function sortTable(k){
+  const mappedKey=k==='group'?groupKey():k==='col3'?col3Key():k;
+  if(sortKey===mappedKey)sortDir*=-1;else{sortKey=mappedKey;sortDir=1;}
+  document.querySelectorAll('.head-main th').forEach(t=>t.classList.remove('sort-active'));
+  const m={};m[groupKey()]='th-group';m[col3Key()]='th-col3';m['name']='th-name';m['status']='th-status';m['start']='th-start';m['end']='th-end';
+  if(m[sortKey])document.getElementById(m[sortKey])&&document.getElementById(m[sortKey]).classList.add('sort-active');
+  render();
+}
+function getStatusClass(s){
+  if(!s)return'b-yet';const sl=s.toLowerCase();
+  if(sl.includes('complet')||sl.includes('moved to standard'))return'b-done';
+  if(sl.includes('progress')||sl.includes('approved')||sl.includes('review'))return'b-ip';
+  if(sl.includes('hold')||sl.includes('rework')||sl.includes('re-work'))return'b-over';
+  if(sl.includes('scheduled'))return'b-sched';
+  return'b-yet';
+}
+function render(){
+  const phr=document.getElementById('phase-header-row');
+  while(phr.children.length>7)phr.removeChild(phr.lastChild);
+  if(phr.children.length<=7){PHASE_SHORT().forEach(function(n,i){const th=document.createElement('th');th.className='phase-cols';th.title=PHASE_NAMES()[i];th.textContent=n;phr.appendChild(th);});}
+  const D=DATA(),gk=groupKey(),ck=col3Key();
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const grpF=document.getElementById('fGroup').value,stF=document.getElementById('fStatus').value;
+  let rows=D.map(function(r,i){return{r:r,i:i};}).filter(function(x){
+    const r=x.r;
+    if(grpF&&r[gk]!==grpF)return false;
+    if(stF&&r.status!==stF)return false;
+    if(q&&!r.name.toLowerCase().includes(q)&&!(r[gk]||'').toLowerCase().includes(q)&&!(r[ck]||'').toLowerCase().includes(q))return false;
+    return true;
+  });
+  rows.sort(function(a,b){const av=a.r[sortKey]||'',bv=b.r[sortKey]||'';return av<bv?-sortDir:av>bv?sortDir:0;});
+  document.getElementById('tbody').innerHTML=rows.map(function(x,ri){
+    const r=x.r,i=x.i,gCol=r[gk]||'',c3=r[ck]||'',grpColor=sc(gCol);
+    const stCls=getStatusClass(r.status);
+    const dots=(r.phases||[]).map(function(p,pi){const done2=(r.phaseDone||[])[pi];const dn=done2===undefined?null:done2;const cls=miniDotClass(p,dn);return '<span class="p-mini '+cls+'" title="'+PHASE_SHORT()[pi]+': '+fmtDate(p)+'"></span>';}).join('');
+    const sumCell='<td class="phase-sum-col" onmouseenter="showAllPhasesPopup(event,'+i+')" onmouseleave="scheduleHide()" onclick="togglePhases()"><div class="phase-dot-row">'+dots+'</div></td>';
+    const phaseCells=(r.phases||[]).map(function(p,pi){const done2=(r.phaseDone||[])[pi];const dn=done2===undefined?null:done2;const cls=phaseClass(p,dn);
+      return '<td class="phase-cell phase-cols" onclick="togglePhase('+i+','+pi+')" onmouseenter="showPhasePopup(event,'+i+','+pi+')" onmouseleave="scheduleHide()"><div class="phase-date '+cls+'"><div class="phase-dot"></div><span class="phase-val">'+fmtDate(p)+'</span>'+phaseIcon(dn)+'</div></td>';
+    }).join('');
+    const delay=Math.min(ri*0.018,0.5);
+    return '<tr style="animation-delay:'+delay+'s">'+
+      '<td title="'+gCol+'" style="color:'+grpColor+';font-weight:700;font-size:11px">'+gCol+'</td>'+
+      '<td style="font-family:var(--mono);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px" title="'+r.name+'">'+r.name+'</td>'+
+      '<td class="col-flow"><span class="badge b-c3">'+(c3||'—')+'</span></td>'+
+      '<td><span class="badge '+stCls+'">'+r.status+'</span></td>'+
+      '<td class="col-start" style="color:var(--text2);font-family:var(--mono);font-size:11px;font-weight:500">'+r.start+'</td>'+
+      '<td class="col-end" style="color:var(--text2);font-family:var(--mono);font-size:11px;font-weight:500">'+r.end+'</td>'+
+      sumCell+phaseCells+'</tr>';
+  }).join('');
+  document.getElementById('rowCount').textContent='Showing '+rows.length+' of '+D.length+' items';
+}
+
+/* ════════════ EDITOR ═════════════════════════════════ */
+function renderEditor(){
+  const D=DATA(),gk=groupKey(),ck=col3Key();
+  const q=(document.getElementById('editorSearch').value||'').toLowerCase();
+  const rows=D.map(function(r,i){return{r:r,i:i};}).filter(function(x){return!q||x.r.name.toLowerCase().includes(q)||(x.r[gk]||'').toLowerCase().includes(q);});
+  document.getElementById('editCount').textContent=rows.length+' / '+D.length+' rows';
+  document.getElementById('editorTbody').innerHTML=rows.map(function(x){
+    const r=x.r,i=x.i;
+    return '<tr><td class="row-num">'+(i+1)+'</td>'+
+      '<td><input class="cell-input" value="'+esc(r[gk]||'')+'" onchange="updField('+i+',\''+gk+'\',this.value)" style="min-width:100px"/></td>'+
+      '<td><input class="cell-input" value="'+esc(r.name)+'" onchange="updField('+i+',\'name\',this.value)" style="min-width:260px"/></td>'+
+      '<td><input class="cell-input" value="'+esc(r[ck]||'')+'" onchange="updField('+i+',\''+ck+'\',this.value)" style="min-width:80px"/></td>'+
+      '<td><select class="cell-select" onchange="updField('+i+',\'status\',this.value)" style="min-width:140px">'+
+      (STATUS_LIST.includes(r.status)?'':('<option value="'+esc(r.status)+'" selected>'+esc(r.status)+'</option>'))+
+      STATUS_LIST.map(s=>'<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+s+'</option>').join('')+
+      '</select></td>'+
+      '<td><input class="cell-input" type="date" value="'+r.start+'" onchange="updField('+i+',\'start\',this.value)"/></td>'+
+      '<td><input class="cell-input" type="date" value="'+r.end+'" onchange="updField('+i+',\'end\',this.value)"/></td>'+
+      '<td style="text-align:center;white-space:nowrap"><button class="act-btn" onclick="openEditModal('+i+')" title="Edit phases">✎</button> <button class="act-btn del" onclick="deleteRow('+i+')" title="Delete">✕</button></td></tr>';
+  }).join('');
+}
+function updField(i,f,v){DATA()[i][f]=v;persist();refreshDashboard();}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+/* ════════════ CSV ════════════════════════════════════ */
+function toCSV(){
+  const D=DATA(),gk=groupKey(),ck=col3Key();
+  const h=gk+',name,'+ck+',status,start,end,phases,phaseDone\n';
+  return h+D.map(r=>[r[gk]||'','"'+(r.name||'').replace(/"/g,'""')+'"',r[ck]||'',r.status,r.start,r.end,(r.phases||[]).map(p=>p||'').join(';'),(r.phaseDone||[]).map(d=>d===true?'1':d===false?'0':'').join(';')].join(',')).join('\n');
+}
+function exportCSV(){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(toCSV());a.download='R2_'+(currentPlan==='int'?'Integrations':'SCM')+'.csv';a.click();toast('CSV exported.','success');}
+function copyJSON(){navigator.clipboard.writeText(JSON.stringify(DATA(),null,2)).then(()=>toast('JSON copied.','info'));}
+function parseCSV(text,gk,ck){
+  const lines=text.trim().split('\n'),hdr=lines[0].split(',').map(h=>h.trim().toLowerCase()),rows=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=[];let cur='',inQ=false;
+    for(const ch of lines[i]){if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){cols.push(cur);cur='';}else cur+=ch;}
+    cols.push(cur);if(cols.length<6)continue;
+    const get=k=>{const idx=hdr.indexOf(k);return idx>=0?(cols[idx]||'').trim():'';};
+    const pr=get('phases'),phases=pr?pr.split(';').map(p=>p.trim()||null):Array(7).fill(null);
+    while(phases.length<7)phases.push(null);
+    const dr=get('phasedone'),phaseDone=dr?dr.split(';').map(d=>d==='1'?true:d==='0'?false:null):Array(7).fill(null);
+    while(phaseDone.length<7)phaseDone.push(null);
+    const row={name:get('name').replace(/^"|"$/g,'').replace(/""/g,'"'),status:get('status'),start:get('start'),end:get('end'),phases:phases.slice(0,7),phaseDone:phaseDone.slice(0,7)};
+    row[gk]=get(gk);row[ck]=get(ck);rows.push(row);
+  }return rows;
+}
+function importCSVFile(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{const rows=parseCSV(ev.target.result,groupKey(),col3Key());if(!rows.length){toast('No valid rows.','error');return;}if(!confirm('Import '+rows.length+' rows?'))return;if(currentPlan==='int')INT_DATA=rows;else SCM_DATA=rows;persist();refreshAll();toast('Imported '+rows.length+' items.','success');};reader.readAsText(file);}
+function importFromPaste(){const text=document.getElementById('csvPaste').value.trim();if(!text){toast('Paste CSV first.','warn');return;}const rows=parseCSV(text,groupKey(),col3Key());if(!rows.length){toast('No valid rows.','error');return;}if(!confirm('Import '+rows.length+' rows?'))return;if(currentPlan==='int')INT_DATA=rows;else SCM_DATA=rows;persist();refreshAll();toast('Imported '+rows.length+' items.','success');document.getElementById('csvPaste').value='';}
+function resetData(){if(!confirm('Reset to original data?'))return;if(currentPlan==='int'){INT_DATA=INT_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));localStorage.removeItem('r2_int_data');}else{SCM_DATA=SCM_DEFAULT.map(r=>Object.assign({},r,{phases:[...r.phases]}));localStorage.removeItem('r2_scm_data');}refreshAll();toast('Reset.','info');}
+
+/* ════════════ EXCEL EXPORT ═══════════════════════════════════ */
+function exportXLSX(){
+  if(typeof XLSX==='undefined'){toast('SheetJS not loaded yet, try again.','warn');return;}
+  const D=DATA(),gk=groupKey(),ck=col3Key();
+  const PN=PHASE_NAMES();
+  const header=[gk==='system'?'System':'Category','Name',ck==='flow'?'Flow':'Assigned To','Status','Start Date','End Date',...PN];
+  const rows=D.map(r=>[r[gk]||'',r.name,r[ck]||'',r.status,r.start,r.end,...(r.phases||[]).map(p=>p||'')]);
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+  // column widths
+  ws['!cols']=[{wch:18},{wch:55},{wch:15},{wch:20},{wch:12},{wch:12},...PN.map(()=>({wch:12}))];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,currentPlan==='int'?'R2 Integrations Plan':'R2 SCM Plan');
+  XLSX.writeFile(wb,'R2_'+(currentPlan==='int'?'Integrations':'SCM')+'_Export.xlsx');
+  toast('Excel exported.','success');
+}
+
+/* ════════════ EXCEL IMPORT ═══════════════════════════════════ */
+let xlWorkbook=null,xlSheetData=[],xlHeaders=[];
+
+// INT fields to map
+const INT_FIELDS=[
+  {key:'system',   label:'System',        required:true},
+  {key:'name',     label:'Integration Name',required:true},
+  {key:'flow',     label:'Flow',          required:false},
+  {key:'status',   label:'Status',        required:false},
+  {key:'start',    label:'Start Date',    required:false},
+  {key:'end',      label:'End Date',      required:false},
+  {key:'ph0',label:'Discussion 1',required:false},{key:'ph1',label:'Discussion 2',required:false},
+  {key:'ph2',label:'Func. Spec',   required:false},{key:'ph3',label:'API Dev',     required:false},
+  {key:'ph4',label:'I-Flow Dev',   required:false},{key:'ph5',label:'Unit/CPI Test',required:false},
+  {key:'ph6',label:'SIT',          required:false},
+];
+const SCM_FIELDS=[
+  {key:'category', label:'Category',       required:true},
+  {key:'name',     label:'WRICEF Name',    required:true},
+  {key:'assignedTo',label:'Assigned To',   required:false},
+  {key:'status',   label:'Status',         required:false},
+  {key:'start',    label:'Start Date',     required:false},
+  {key:'end',      label:'End Date',       required:false},
+  {key:'ph0',label:'Discussion 1',required:false},{key:'ph1',label:'Discussion 2',required:false},
+  {key:'ph2',label:'Func. Spec',   required:false},{key:'ph3',label:'Development', required:false},
+  {key:'ph4',label:'Unit Testing', required:false},{key:'ph5',label:'SIT',         required:false},
+  {key:'ph6',label:'UAT',          required:false},
+];
+
+function getXlFields(){return currentPlan==='int'?INT_FIELDS:SCM_FIELDS;}
+
+function handleXlDrop(e){
+  e.preventDefault();document.getElementById('xlDrop').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file)loadXlFile(file);
+}
+function handleXlFile(e){const file=e.target.files[0];if(file)loadXlFile(file);}
+
+function loadXlFile(file){
+  if(typeof XLSX==='undefined'){toast('SheetJS library not loaded.','error');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      xlWorkbook=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      // populate sheet selector
+      const sel=document.getElementById('xlSheet');
+      sel.innerHTML=xlWorkbook.SheetNames.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+      // auto-select best sheet
+      const best=xlWorkbook.SheetNames.find(s=>s.toLowerCase().includes(currentPlan==='int'?'integr':'scm'))||xlWorkbook.SheetNames[0];
+      sel.value=best;
+      renderXlPreview(best);
+      document.getElementById('xlPreview').style.display='block';
+      document.getElementById('xlDrop').style.opacity='.6';
+    }catch(err){toast('Failed to read Excel file: '+err.message,'error');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function onSheetChange(){renderXlPreview(document.getElementById('xlSheet').value);}
+
+function xlDateToStr(v){
+  if(!v)return null;
+  if(v instanceof Date){
+    if(isNaN(v))return null;
+    const y=v.getFullYear(),m=String(v.getMonth()+1).padStart(2,'0'),d=String(v.getDate()).padStart(2,'0');
+    if(y<2000||y>2030)return null;
+    return y+'-'+m+'-'+d;
+  }
+  if(typeof v==='string'){
+    const t=v.trim();
+    if(!t||t.toLowerCase()==='tbd'||t==='00:00:00')return null;
+    const d=new Date(t);
+    if(!isNaN(d)&&d.getFullYear()>=2000&&d.getFullYear()<=2030)
+      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  if(typeof v==='number'&&v>40000&&v<50000){
+    const d=new Date((v-25569)*86400*1000);
+    return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+  }
+  return null;
+}
+
+function renderXlPreview(sheetName){
+  if(!xlWorkbook)return;
+  const ws=xlWorkbook.Sheets[sheetName];
+  const raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,dateNF:'YYYY-MM-DD',defval:''});
+
+  // find header row (first row with >3 non-empty cells)
+  let headerRow=0;
+  for(let i=0;i<Math.min(10,raw.length);i++){
+    if(raw[i].filter(c=>c&&String(c).trim()).length>3){headerRow=i;break;}
+  }
+  xlHeaders=raw[headerRow].map(c=>String(c||'').trim());
+  xlSheetData=raw.slice(headerRow+1).filter(r=>r.some(c=>c&&String(c).trim()));
+
+  document.getElementById('xlPreviewTitle').textContent=
+    sheetName+' — '+xlSheetData.length+' data rows, '+xlHeaders.length+' columns';
+  document.getElementById('xlRowCount').textContent=xlSheetData.length+' data rows detected';
+
+  // preview table (first 5 rows)
+  const previewRows=xlSheetData.slice(0,5);
+  const th=xlHeaders.map(h=>'<th>'+h+'</th>').join('');
+  const trs=previewRows.map(r=>'<tr>'+xlHeaders.map((_,i)=>'<td title="'+(r[i]||'')+'">'+String(r[i]||'').substring(0,30)+'</td>').join('')+'</tr>').join('');
+  document.getElementById('xlPreviewTable').innerHTML='<table><thead><tr>'+th+'</tr></thead><tbody>'+trs+'</tbody></table>';
+
+  // column mapping dropdowns
+  const fields=getXlFields();
+  const opts='<option value="">— skip —</option>'+xlHeaders.map((h,i)=>'<option value="'+i+'">'+(h||'Col '+(i+1))+'</option>').join('');
+
+  document.getElementById('xlMapGrid').innerHTML=fields.map(f=>{
+    // auto-detect best matching column
+    const fl=f.label.toLowerCase();
+    let best='';
+    xlHeaders.forEach((h,i)=>{
+      const hl=(h||'').toLowerCase();
+      if(hl.includes(fl)||fl.includes(hl)||
+        (f.key==='system'&&(hl.includes('system')||hl.includes('module')))||
+        (f.key==='category'&&hl.includes('categ'))||
+        (f.key==='name'&&(hl.includes('name')||hl.includes('detail')||hl.includes('integrat')||hl.includes('wricef')))||
+        (f.key==='flow'&&(hl.includes('flow')||hl.includes('direction')))||
+        (f.key==='assignedTo'&&(hl.includes('assign')||hl.includes('owner')||hl.includes('person')))||
+        (f.key==='status'&&hl.includes('status'))||
+        (f.key==='start'&&(hl.includes('start')||hl.includes('begin')))||
+        (f.key==='end'&&(hl.includes('end')||hl.includes('finish')||hl.includes('sit')&&f.key==='end'))||
+        (f.key.startsWith('ph')&&hl.includes(fl.substring(0,4)))
+      ){best=String(i);}
+    });
+    return '<div class="xl-map-row">'+
+      '<label class="xl-map-label">'+f.label+(f.required?' *':'')+'</label>'+
+      '<select class="xl-map-select" id="xlmap-'+f.key+'">'+opts.replace('value="'+best+'"','value="'+best+'" selected')+'</select>'+
+      '</div>';
+  }).join('');
+
+  document.getElementById('xlImportLabel').textContent=currentPlan==='int'?'Integrations':'SCM';
+  document.getElementById('export-plan-label').textContent=currentPlan==='int'?'R2 Integrations':'R2 SCM';
+}
+
+function getMapVal(key){
+  const sel=document.getElementById('xlmap-'+key);
+  return sel?sel.value:'';
+}
+
+function importFromXL(){
+  if(!xlWorkbook||!xlSheetData.length){toast('No Excel data loaded.','warn');return;}
+  const fields=getXlFields();
+  const gk=groupKey(),ck=col3Key();
+
+  // validate required fields
+  const nameIdx=getMapVal('name');
+  if(nameIdx===''){toast('Please map the Name/Integration column first.','error');return;}
+
+  const rows=[];
+  xlSheetData.forEach(row=>{
+    const get=key=>{const idx=getMapVal(key);return idx!==''?String(row[idx]||'').trim():'';};
+    const name=get('name');
+    if(!name)return; // skip empty name rows
+
+    const phases=[get('ph0'),get('ph1'),get('ph2'),get('ph3'),get('ph4'),get('ph5'),get('ph6')]
+      .map(v=>xlDateToStr(v)||null);
+
+    const r={name,status:get('status')||'Yet to Start',
+      start:xlDateToStr(get('start'))||'',end:xlDateToStr(get('end'))||'',
+      phases,phaseDone:Array(7).fill(null)};
+    r[gk]=get(gk==='system'?'system':'category')||'';
+    r[ck]=get(ck==='flow'?'flow':'assignedTo')||'';
+    rows.push(r);
+  });
+
+  if(!rows.length){toast('No valid rows found. Check column mapping.','error');return;}
+
+  const mode=document.querySelector('input[name="xlMode"]:checked')?.value||'append';
+  const label=currentPlan==='int'?'integration':'WRICEF';
+
+  if(mode==='replace'){
+    if(!confirm('Replace all '+(currentPlan==='int'?INT_DATA.length:SCM_DATA.length)+' existing '+label+'s with '+rows.length+' imported rows?'))return;
+    if(currentPlan==='int')INT_DATA=rows;else SCM_DATA=rows;
+  } else {
+    if(!confirm('Append '+rows.length+' '+label+'s to the '+( currentPlan==='int'?'Integrations':'SCM')+' plan?'))return;
+    if(currentPlan==='int')INT_DATA.push(...rows);else SCM_DATA.push(...rows);
+  }
+
+  persist();refreshAll();clearXlPreview();
+  toast((mode==='replace'?'Replaced with ':'Appended ')+rows.length+' '+label+'s from Excel.','success');
+
+  // update count badge
+  document.getElementById(currentPlan==='int'?'int-count':'scm-count').textContent=DATA().length;
+}
+
+function clearXlPreview(){
+  xlWorkbook=null;xlSheetData=[];xlHeaders=[];
+  document.getElementById('xlPreview').style.display='none';
+  document.getElementById('xlDrop').style.opacity='1';
+  document.getElementById('xlFile').value='';
+}
+
+/* update export label when plan switches */
+function refreshDashboard(){buildKPIs();buildCharts();buildGantt();buildDefaulters();buildSysCompletion();populateFilters();render();}
+function refreshAll(){refreshDashboard();if(document.getElementById('view-editor').classList.contains('active'))renderEditor();}
+
+/* ════════════ SYSTEM / CATEGORY COMPLETION ══════════════ */
+function buildSysCompletion(){
+  const D=DATA(),gk=groupKey();
+  // update title label
+  document.getElementById('syscomp-title').textContent=
+    (currentPlan==='int'?'System':'Category')+'-wise phase completion';
+
+  // aggregate per group
+  const groups={};
+  D.forEach(function(r){
+    const g=r[gk]||'Unknown';
+    if(!groups[g])groups[g]={done:0,total:0};
+    (r.phases||[]).forEach(function(p,pi){
+      groups[g].total++;
+      if((r.phaseDone||[])[pi]===true) groups[g].done++;
+    });
+  });
+
+  // sort by completion % descending
+  const sorted=Object.keys(groups).sort(function(a,b){
+    const pa=groups[a].total>0?groups[a].done/groups[a].total:0;
+    const pb=groups[b].total>0?groups[b].done/groups[b].total:0;
+    return pb-pa;
+  });
+
+  document.getElementById('syscompBody').innerHTML=sorted.map(function(g){
+    const d=groups[g],pct=d.total>0?Math.round(d.done/d.total*100):0;
+    const color=sc(g);
+    // colour: green ≥70, amber 40-69, red <40
+    const pctColor=pct>=70?'#059669':pct>=40?'#d97706':'#dc2626';
+    return '<div class="syscomp-row">'+
+      '<div class="syscomp-label" title="'+g+'" style="color:'+color+'">'+g+'</div>'+
+      '<div class="syscomp-track">'+
+        '<div class="syscomp-bar" style="width:'+pct+'%;background:linear-gradient(90deg,'+color+'aa,'+color+')"></div>'+
+      '</div>'+
+      '<div class="syscomp-col">'+
+        '<div class="syscomp-pct" style="color:'+pctColor+'">'+pct+'%</div>'+
+        '<div class="syscomp-counts">'+d.done+' / '+d.total+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ════════════ DEFAULTERS ═════════════════════════════ */
+function buildDefaulters(){
+  const D=DATA(),gk=groupKey(),PN=PHASE_NAMES();
+  const defaulters=[];
+  D.forEach(function(r){
+    const overduePhases=[];let maxDaysLate=0;
+    (r.phases||[]).forEach(function(p,pi){
+      if(!p)return;
+      const done=(r.phaseDone||[])[pi];
+      if(done===true)return;
+      const dt=new Date(p);
+      if(dt<today){
+        const days=Math.round((today-dt)/864e5);
+        if(days>maxDaysLate)maxDaysLate=days;
+        overduePhases.push({name:PN[pi],date:p,days:days});
+      }
+    });
+    if(overduePhases.length) defaulters.push({group:r[gk]||'',name:r.name,phases:overduePhases,maxDays:maxDaysLate});
+  });
+  // Sort: most overdue first
+  defaulters.sort((a,b)=>b.maxDays-a.maxDays);
+
+  document.getElementById('defaultersCount').textContent=defaulters.length;
+
+  if(!defaulters.length){
+    document.getElementById('defaultersBody').innerHTML=
+      '<div class="defaulters-empty">'+
+        '<div class="defaulters-empty-icon">✅</div>'+
+        '<div><div class="defaulters-empty-text">All phases are on track!</div>'+
+        '<div class="defaulters-empty-sub">No deadline missed items found for this plan.</div></div>'+
+      '</div>';
+    return;
+  }
+
+  document.getElementById('defaultersBody').innerHTML=defaulters.map(function(d,idx){
+    const grpColor=sc(d.group);
+    const urgency=d.maxDays>30?'#dc2626':d.maxDays>14?'#ea580c':'#d97706';
+    const daysLabel=d.maxDays===1?'1 day late':d.maxDays+' days late';
+    const tags=d.phases.map(function(ph){
+      return '<span class="defaulter-tag">'+
+        '<span class="defaulter-tag-dot"></span>'+
+        '<span class="defaulter-tag-name">'+ph.name+'</span>'+
+        '<span class="defaulter-tag-sep">·</span>'+
+        '<span class="defaulter-tag-date">'+fmtDate(ph.date)+'</span>'+
+      '</span>';
+    }).join('');
+    return '<div class="defaulter-row">'+
+      '<span class="defaulter-num">'+(idx+1)+'</span>'+
+      '<div class="defaulter-main">'+
+        '<div class="defaulter-name" title="'+d.name+'">'+d.name+'</div>'+
+        '<div class="defaulter-phases">'+
+          '<span class="defaulter-grp" style="background:color-mix(in srgb,'+grpColor+' 12%,transparent);color:'+grpColor+';border:1px solid color-mix(in srgb,'+grpColor+' 28%,transparent)">'+d.group+'</span>'+
+          tags+
+        '</div>'+
+      '</div>'+
+      '<div class="defaulter-days" style="background:color-mix(in srgb,'+urgency+' 10%,transparent);color:'+urgency+';border:1px solid color-mix(in srgb,'+urgency+' 25%,transparent)">'+daysLabel+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function syncImportLabels(){
+  const lbl=currentPlan==='int'?'R2 Integrations':'R2 SCM';
+  const el=document.getElementById('export-plan-label');if(el)el.textContent=lbl;
+  const el2=document.getElementById('xlImportLabel');if(el2)el2.textContent=currentPlan==='int'?'Integrations':'SCM';
+}
+
+const extraCSS=document.createElement('style');
+extraCSS.textContent='.b-c3{background:rgba(8,145,178,.1);color:#0e7490;border:1px solid rgba(8,145,178,.2)}.b-over{background:rgba(220,38,38,.1);color:#991b1b;border:1px solid rgba(220,38,38,.2)}.b-sched{background:rgba(124,58,237,.1);color:#5b21b6;border:1px solid rgba(124,58,237,.2)}';
+document.head.appendChild(extraCSS);
+
+sortKey=groupKey();
+
+// Migrate old "Yet to Start" / "Yet to start" values in localStorage
+function migrateStatus(){
+  [INT_DATA, SCM_DATA].forEach(D=>{
+    D.forEach(r=>{
+      if(r.status==='Yet to Start'||r.status==='Yet to start') r.status='New';
+    });
+  });
+  try{localStorage.setItem('r2_int_data',JSON.stringify(INT_DATA));
+      localStorage.setItem('r2_scm_data',JSON.stringify(SCM_DATA));}catch(e){}
+}
+migrateStatus();
+refreshDashboard();
+syncImportLabels();
+
+</script>
+</body>
+</html>

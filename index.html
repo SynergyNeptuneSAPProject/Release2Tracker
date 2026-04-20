@@ -1408,13 +1408,13 @@ async function initSupabase(){
     sbClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
     document.getElementById('syncBar').style.display='flex';
     document.getElementById('syncUser').textContent='👤 '+sbUser;
-    document.getElementById('dbLoading').style.display='flex';
+    const dl=document.getElementById('dbLoading');if(dl)dl.style.display='flex';
     setSyncStatus('saving','Connecting…');
     await loadData();
     subscribeRealtime();
   }catch(e){
     setSyncStatus('offline','Connection failed');
-    document.getElementById('dbLoading').style.display='none';
+    const dl=document.getElementById('dbLoading');if(dl)dl.style.display='none';
     toast('Supabase error: '+e.message,'error');
   }
 }
@@ -1441,7 +1441,7 @@ async function loadData(){
     while(r.phaseDone.length<7)r.phaseDone.push(null);
   }));
   migrateStatus();
-  document.getElementById('dbLoading').style.display='none';
+  const dl=document.getElementById('dbLoading');if(dl)dl.style.display='none';
   setSyncStatus('online','Live — synced');
   refreshDashboard();
   syncImportLabels();

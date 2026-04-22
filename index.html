@@ -9,7 +9,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Supabase realtime sync -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 
 /* ── TOKENS ─────────────────────────────────────────────────── */
@@ -853,6 +852,7 @@ thead tr.head-main th:nth-child(4),thead tr.phase-subhead th:nth-child(4),tbody 
   <span class="sync-label" id="syncLabel">Connecting…</span>
   <span class="sync-user" id="syncUser"></span>
   <button class="sync-setup-btn" onclick="sbUser='';localStorage.removeItem('sb_user');location.reload()" title="Change your name">✏️ Change name</button>
+  <button class="sync-setup-btn" onclick="forceReload()" title="Force reload data from database" style="margin-left:4px">🔄 Reload from DB</button>
 </div>
 <canvas id="particleCanvas"></canvas>
 <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
@@ -1190,7 +1190,8 @@ thead tr.head-main th:nth-child(4),thead tr.phase-subhead th:nth-child(4),tbody 
 <div class="smart-popup" id="popup" style="display:none"></div>
 <div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
 
-<script>
+<script type="module">
+import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const INT_PHASE_NAMES=['Discussion 1','Discussion 2','Func. Spec','API Dev','I-Flow Dev','Unit/CPI Test','SIT'];
 const SCM_PHASE_NAMES=['Discussion 1','Discussion 2','Func. Spec','Development','Unit Testing','SIT','UAT'];
 const INT_PHASE_SHORT=['Disc.1','Disc.2','F.Spec','API','I-Flow','Unit','SIT'];
@@ -1418,7 +1419,7 @@ function showNamePrompt(){
 
 async function initSupabase(){
   try{
-    sbClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    sbClient=createClient(SUPABASE_URL,SUPABASE_KEY);
     document.getElementById('syncBar').style.display='flex';
     document.getElementById('syncUser').textContent='👤 '+sbUser;
     const dl=document.getElementById('dbLoading');if(dl)dl.style.display='flex';
@@ -1432,21 +1433,60 @@ async function initSupabase(){
   }
 }
 
-async function loadData(){
-  // Load both plans
-  const {data:intRow}=await sbClient.from('project_data').select('rows').eq('id','integrations').single();
-  const {data:scmRow}=await sbClient.from('project_data').select('rows').eq('id','scm').single();
-
-  if(intRow&&intRow.rows&&intRow.rows.length){
-    INT_DATA=intRow.rows;
-  } else {
-    // First run — seed the database with defaults
-    await sbClient.from('project_data').upsert({id:'integrations',rows:INT_DATA,updated_by:'system',updated_at:new Date().toISOString()});
+async function forceReload(){
+  if(!sbClient){toast('Not connected to database','error');return;}
+  setSyncStatus('saving','Reloading…');
+  toast('Reloading data from database…','info');
+  try{
+    await loadData();
+    refreshDashboard();
+    syncImportLabels();
+    toast('Data reloaded from database ✓','success');
+  }catch(e){
+    setSyncStatus('offline','Reload failed');
+    toast('Reload failed: '+e.message,'error');
   }
-  if(scmRow&&scmRow.rows&&scmRow.rows.length){
-    SCM_DATA=scmRow.rows;
+}
+
+async function loadData(){
+  // Helper: extract readable message from Supabase error object
+  function errMsg(e){return e?(e.message||e.hint||e.details||JSON.stringify(e)):'Unknown error';}
+
+  // Use .limit(1) array form instead of maybeSingle() — avoids DataCloneError with Headers
+  // postMessage bug in Supabase CDN builds when using maybeSingle()/single()
+  const {data:intList,error:intErr}=await sbClient.from('project_data').select('rows').eq('id','integrations').limit(1);
+  const {data:scmList,error:scmErr}=await sbClient.from('project_data').select('rows').eq('id','scm').limit(1);
+
+  if(intErr){
+    const msg=errMsg(intErr);
+    console.error('Error loading integrations:',msg,intErr);
+    toast('Error loading integrations: '+msg,'error');
+    throw new Error(msg);
+  }
+  if(scmErr){
+    const msg=errMsg(scmErr);
+    console.error('Error loading SCM:',msg,scmErr);
+    toast('Error loading SCM: '+msg,'error');
+    throw new Error(msg);
+  }
+
+  // intList/scmList are arrays — [] means row doesn't exist, [{rows:[...]}] means it does
+  const intRow=intList&&intList.length>0?intList[0]:null;
+  const scmRow=scmList&&scmList.length>0?scmList[0]:null;
+
+  // Only load from DB if a row exists — NEVER overwrite real DB data with hardcoded defaults
+  if(intRow!==null){
+    if(Array.isArray(intRow.rows))INT_DATA=intRow.rows;
   } else {
-    await sbClient.from('project_data').upsert({id:'scm',rows:SCM_DATA,updated_by:'system',updated_at:new Date().toISOString()});
+    // Row truly doesn't exist (first-ever run) — upsert to avoid duplicate key on retry
+    const{error:seedErr}=await sbClient.from('project_data').upsert({id:'integrations',rows:INT_DATA,updated_by:'system',updated_at:new Date().toISOString()});
+    if(seedErr){console.error('Seed integrations error:',errMsg(seedErr),seedErr);}
+  }
+  if(scmRow!==null){
+    if(Array.isArray(scmRow.rows))SCM_DATA=scmRow.rows;
+  } else {
+    const{error:seedErr}=await sbClient.from('project_data').upsert({id:'scm',rows:SCM_DATA,updated_by:'system',updated_at:new Date().toISOString()});
+    if(seedErr){console.error('Seed SCM error:',errMsg(seedErr),seedErr);}
   }
 
   [INT_DATA,SCM_DATA].forEach(D=>D.forEach(r=>{
@@ -1476,15 +1516,29 @@ function subscribeRealtime(){
     });
 }
 
+async function persistWithRetry(id,rows,attempt){
+  attempt=attempt||1;
+  const{error}=await sbClient.from('project_data').upsert({id,rows,updated_by:sbUser,updated_at:new Date().toISOString()});
+  if(error){
+    if(attempt<3){
+      setSyncStatus('saving','Retrying… ('+attempt+'/3)');
+      await new Promise(r=>setTimeout(r,1200*attempt));
+      return persistWithRetry(id,rows,attempt+1);
+    }
+    setSyncStatus('offline','Save failed — check connection');
+    toast('Save failed after 3 attempts: '+error.message,'error');
+    return false;
+  }
+  setSyncStatus('online','Saved · '+new Date().toLocaleTimeString());
+  return true;
+}
+
 function persist(){
   if(sbClient){
     setSyncStatus('saving','Saving…');
     const id=currentPlan==='int'?'integrations':'scm';
-    sbClient.from('project_data').upsert({id,rows:DATA(),updated_by:sbUser,updated_at:new Date().toISOString()})
-      .then(({error})=>{
-        if(error){setSyncStatus('offline','Save failed');toast('Save failed: '+error.message,'error');}
-        else setSyncStatus('online','Saved · '+new Date().toLocaleTimeString());
-      });
+    const snapshot=JSON.parse(JSON.stringify(DATA()));
+    persistWithRetry(id,snapshot);
   }
 }
 
@@ -1890,7 +1944,7 @@ function buildGantt(){
       (tp2>=0?'<div class="gantt-today" style="left:'+tp2+'%"></div>':'')+'</div>'+
       '<span style="font-size:10px;color:'+c+';font-family:var(--mono);margin-left:10px;font-weight:700">'+count+'</span></div>';
   });
-  if(tp2>=0)html+='<div style="display:flex;align-items:center;gap:7px;margin-top:12px;padding-left:140px;font-size:11px;color:var(--text3)"><span style="width:14px;height:2px;background:var(--red);display:inline-block;border-radius:1px"></span>Today — Apr 16, 2026</div>';
+  if(tp2>=0)html+='<div style="display:flex;align-items:center;gap:7px;margin-top:12px;padding-left:140px;font-size:11px;color:var(--text3)"><span style="width:14px;height:2px;background:var(--red);display:inline-block;border-radius:1px"></span>Today — '+today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div>';
   document.getElementById('gantt').innerHTML=html;
 }
 function showGanttPopup(e,grp,count,dur,elapsed,color){
